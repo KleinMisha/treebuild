@@ -8,3 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Unit-test coverage reports, cache, etc.
+.coverage
+coverage.*
+htmlcov/
+*/__pycache__/
+
+# Logs
+logs/ 
