@@ -1,0 +1,25 @@
+[project]
+name = "treebuild"
+version = "0.1.0"
+description = "A CLI to go from concept to sketch of directory trees."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*", "*/__init__.py"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-coverage>=0.0",
+]
+
