@@ -33,11 +33,6 @@ def renderer() -> MockRenderer:
     return MockRenderer()
 
 
-@pytest.fixture()
-def tree() -> Tree:
-    return Tree(Branch("root"))
-
-
 def test_render_tree_returns_string(tree: Tree, renderer: MockRenderer) -> None:
     """Output should be a single string (no longer a list of strings)"""
     output = renderer.render_tree(tree)
