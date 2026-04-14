@@ -18,7 +18,7 @@ class Renderer(ABC):
 
     @property
     @abstractmethod
-    def connectors(self) -> dict[Connector, str]: ...
+    def _connectors(self) -> dict[Connector, str]: ...
 
     def render_tree(self, tree: Tree, include_root: bool = False) -> str:
         """Render the directory tree structure."""

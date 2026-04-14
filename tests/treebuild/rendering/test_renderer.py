@@ -10,18 +10,20 @@ from treebuild.rendering.renderer import Branch, Connector, Renderer, Tree
 class MockRenderer(Renderer):
     """Simplified version for easy testing of shared logic in the ABC."""
 
-    connectors = {
-        Connector.EMPTY: "E",
-        Connector.MIDDLE_CHILD: "M",
-        Connector.FINAL_CHILD: "F",
-        Connector.CONTINUATION: "C",
-    }
+    @property
+    def _connectors(self) -> dict[Connector, str]:
+        return {
+            Connector.EMPTY: "E",
+            Connector.MIDDLE_CHILD: "M",
+            Connector.FINAL_CHILD: "F",
+            Connector.CONTINUATION: "C",
+        }
 
     def _format_line(self, name: str, ancestor_is_last: list[bool]) -> str:
         prefix = (
-            self.connectors[Connector.FINAL_CHILD]
+            self._connectors[Connector.FINAL_CHILD]
             if ancestor_is_last[-1]
-            else self.connectors[Connector.MIDDLE_CHILD]
+            else self._connectors[Connector.MIDDLE_CHILD]
         )
         return f"LINE:{prefix}\t{name}"
 
