@@ -16,7 +16,9 @@ class Connector(Enum):
 class Renderer(ABC):
     """Rendering tree structure as strings."""
 
-    connectors: dict[Connector, str]
+    @property
+    @abstractmethod
+    def connectors(self) -> dict[Connector, str]: ...
 
     def render_tree(self, tree: Tree, include_root: bool = False) -> str:
         """Render the directory tree structure."""
