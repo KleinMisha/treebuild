@@ -1,5 +1,7 @@
 """Shared fixtures and mocks"""
 
+from itertools import zip_longest
+
 import pytest
 
 from treebuild.tree.branches import Branch, Tree
@@ -9,3 +11,17 @@ from treebuild.tree.branches import Branch, Tree
 def tree() -> Tree:
     """Empty tree with just a root directory"""
     return Tree(Branch("root"))
+
+
+def assert_strings_equal(actual: str, expected: str) -> None:
+    """
+    Test that formatted trees equal on a character-by-character basis.
+    If not, produce custom error message that makes debugging easier.
+    """
+    for idx, (a, b) in enumerate(zip_longest(actual, expected)):
+        if a != b:
+            raise AssertionError(
+                f"Character {idx} differs: {repr(a)} != {repr(b)}\n"
+                + f"actual:   {repr(actual)}\n"
+                + f"expected: {repr(expected)}"
+            )
