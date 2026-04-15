@@ -41,3 +41,11 @@ class Tree:
     """
 
     root: Branch
+
+    def add_leaf(self, filename: str) -> None:
+        """Wrapper for convenience"""
+        self.root.add_leaf(filename)
+
+    def add_branch(self, branch: Branch) -> None:
+        """Wrapper for convenience"""
+        self.root.add_child_branch(branch)
