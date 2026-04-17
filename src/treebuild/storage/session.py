@@ -5,9 +5,6 @@ from typing import Optional
 
 from treebuild.core.exceptions import DuplicatePathError
 
-# todo: Move this into a config file later
-DEFAULT_FILE_LOCATION = Path.home() / ".config" / "treebuild" / "session.txt"
-
 
 class SessionStore:
     """
@@ -17,7 +14,7 @@ class SessionStore:
     A simple TXT-file to save paths added / removed from the collection.
     """
 
-    def __init__(self, file_path: Path = DEFAULT_FILE_LOCATION) -> None:
+    def __init__(self, file_path: Path) -> None:
         self.file = file_path
         # create the file if not yet existing (as well as any directories if needed)
         self.file.parent.mkdir(parents=True, exist_ok=True)
