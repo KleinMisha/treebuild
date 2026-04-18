@@ -8,9 +8,6 @@ class TreeBuildError(Exception):
 class DuplicatePathError(TreeBuildError): ...
 
 
-class NoRootSetError(TreeBuildError): ...
-
-
 class EmptySessionError(TreeBuildError): ...
 
 
