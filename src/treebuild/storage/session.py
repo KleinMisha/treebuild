@@ -64,6 +64,9 @@ class SessionStore:
                 f.write(str(path))
                 f.write("\n")
 
+    def has_paths(self) -> bool:
+        return len(self.read_paths()) > 0
+
     def read_root(self) -> str | None:
         """Read the root from the file (if present)"""
         with self.file.open(mode="r") as f:
@@ -78,13 +81,13 @@ class SessionStore:
 
         Will overwrite any root name stored previously.
         """
-        new_root = f"{ROOT_NAME_PREFIX} {root_name}"
-        lines = self.read_paths()
+        new_root = f"{ROOT_NAME_PREFIX} {root_name}\n"
+        lines = [f"{p}\n" for p in self.read_paths()]
         with self.file.open(mode="w") as f:
             lines.insert(0, new_root)
             f.writelines(lines)
 
-    def root_is_set(self) -> bool:
+    def has_root(self) -> bool:
         return self.read_root() is not None
 
     def clear_file(self) -> None:

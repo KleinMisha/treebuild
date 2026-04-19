@@ -96,7 +96,7 @@ def test_root_is_set(session_file: Path) -> None:
     """Set the root, should return True"""
     session = SessionStore(session_file)
     session.write_root("root")
-    assert session.root_is_set()
+    assert session.has_root()
 
 
 def test_root_is_not_set(session_file: Path) -> None:
@@ -104,4 +104,17 @@ def test_root_is_not_set(session_file: Path) -> None:
     session = SessionStore(session_file)
     session.write_path("path/to/file")
     session.write_path("/path/to/another/file")
-    assert not session.root_is_set()
+    assert not session.has_root()
+
+
+def test_read_and_write(session_file: Path) -> None:
+    """Write both paths and root name"""
+    root_name = "root"
+    paths = ["/path/to/file", "/path/to/another/file"]
+    session = SessionStore(session_file)
+    session.write_root(root_name)
+    for p in paths:
+        session.write_path(p)
+
+    assert set(session.read_paths()) == set(paths)
+    assert session.read_root() == root_name
