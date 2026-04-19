@@ -52,6 +52,16 @@ def test_removing_middle_entry(session_file: Path) -> None:
     assert set(stored_paths) == set(expected_paths)
 
 
+def test_removing_all_paths(session_file: Path) -> None:
+    """Removing all paths"""
+    session = SessionStore(session_file)
+    session.write_path("/first/path/")
+    session.write_path("/second/path/")
+    session.write_path("/third/path/")
+    session.remove_all_paths()
+    assert session.read_paths() == []
+
+
 def test_cannot_write_duplicate(session_file: Path) -> None:
     """Attempting to write a duplicate path should raise an exception."""
     session = SessionStore(session_file)
@@ -82,29 +92,72 @@ def test_read_and_write_root(session_file: Path, root_name: str) -> None:
     assert session.read_root() == root_name
 
 
-def test_write_and_clear(session_file: Path) -> None:
-    """Write to file and clear contents"""
-    session = SessionStore(session_file)
-    session.write_path("/path/to/file")
-    session.write_path("/path/to/another/file")
-    session.write_root("root")
-    session.clear_file()
-    assert set(session.read_paths()) == set()
-
-
-def test_root_is_set(session_file: Path) -> None:
+def test_has_a_root(session_file: Path) -> None:
     """Set the root, should return True"""
     session = SessionStore(session_file)
     session.write_root("root")
     assert session.has_root()
 
 
-def test_root_is_not_set(session_file: Path) -> None:
-    """Only write paths, should not have a root in the file"""
+def test_has_no_root(session_file: Path) -> None:
+    """Only write paths, or add root, then remove, should not have a root in the file"""
     session = SessionStore(session_file)
     session.write_path("path/to/file")
     session.write_path("/path/to/another/file")
     assert not session.has_root()
+
+
+def test_remove_root(session_file: Path) -> None:
+    """Write, remove, then read (the now non-existing) root name."""
+    session = SessionStore(session_file)
+    session.write_root("root")
+    session.remove_root()
+    assert session.read_root() is None
+    assert not session.has_root()
+
+
+def test_has_paths(session_file: Path) -> None:
+    """Should return True if at least one path is set."""
+    session = SessionStore(session_file)
+    session.write_path("a/valid/path")
+    assert session.has_paths()
+
+
+def test_has_no_paths(session_file: Path) -> None:
+    """
+    1. Only write a root to the file, should have no paths
+    2. Write path(s), then remove them, should have no paths
+    """
+    # 1. Set a root, should not influence check for paths in file
+    session = SessionStore(session_file)
+    session.write_root("root")
+    assert not session.has_paths()
+
+    # 2. Removing all paths after adding some, should result in check failing
+    session.write_path("a/valid/path")
+    session.write_path("another_valid.path")
+    session.remove_all_paths()
+    assert not session.has_paths()
+
+
+def test_remove_all_paths_preserves_root(session_file: Path) -> None:
+    """Correctly get back root name after removing all other leaves and branches."""
+    session = SessionStore(session_file)
+    session.write_root("root")
+    session.write_path("a/valid/path")
+    session.write_path("another_valid.path")
+    session.remove_all_paths()
+    assert session.read_root() == "root"
+
+
+def test_remove_root_preserves_paths(session_file: Path) -> None:
+    """Correctly get back all other leaves and branches (paths) after removing the root name."""
+    session = SessionStore(session_file)
+    session.write_root("root")
+    session.write_path("a/valid/path")
+    session.write_path("another_valid.path")
+    session.remove_root()
+    assert set(session.read_paths()) == set(["a/valid/path", "another_valid.path"])
 
 
 def test_read_and_write(session_file: Path) -> None:
@@ -118,3 +171,13 @@ def test_read_and_write(session_file: Path) -> None:
 
     assert set(session.read_paths()) == set(paths)
     assert session.read_root() == root_name
+
+
+def test_write_and_clear(session_file: Path) -> None:
+    """Write to file and clear contents"""
+    session = SessionStore(session_file)
+    session.write_path("/path/to/file")
+    session.write_path("/path/to/another/file")
+    session.write_root("root")
+    session.clear_file()
+    assert (not session.has_paths()) and (not session.has_root())

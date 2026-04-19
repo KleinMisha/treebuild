@@ -64,6 +64,13 @@ class SessionStore:
                 f.write(str(path))
                 f.write("\n")
 
+    def remove_all_paths(self) -> None:
+        """Convenience method to remove all paths and just keep the root (if any)"""
+        root_name = self.read_root()
+        with self.file.open("w") as f:
+            if root_name:
+                f.write(f"{ROOT_NAME_PREFIX} {root_name}\n")
+
     def has_paths(self) -> bool:
         return len(self.read_paths()) > 0
 
@@ -86,6 +93,14 @@ class SessionStore:
         with self.file.open(mode="w") as f:
             lines.insert(0, new_root)
             f.writelines(lines)
+
+    def remove_root(self) -> None:
+        """Remove / Unset root"""
+        paths = self.read_paths()
+        with self.file.open("w") as f:
+            for path in paths:
+                f.write(str(path))
+                f.write("\n")
 
     def has_root(self) -> bool:
         return self.read_root() is not None
