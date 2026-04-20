@@ -8,6 +8,10 @@ from treebuild.core.exceptions import DuplicatePathError
 ROOT_NAME_PREFIX = "# ROOT:"
 
 
+def normalize(entry: str) -> str:
+    return str(Path(entry.strip().lstrip("/")))
+
+
 class SessionStore:
     """
     To save the paths in between CLI calls, so one does not need to write all paths in one go.
@@ -42,7 +46,7 @@ class SessionStore:
         """
 
         current_paths = self.read_paths()
-        normalized = self._normalize(entry)
+        normalized = normalize(entry)
         if normalized in current_paths:
             raise DuplicatePathError(
                 f"{normalized} already included in current session ({self.file})"
@@ -57,7 +61,7 @@ class SessionStore:
         If no value for entry is given, the last entered path in the file will be removed.
         """
         current_paths = self.read_paths()
-        path_to_delete = self._normalize(entry) if entry else current_paths[-1]
+        path_to_delete = normalize(entry) if entry else current_paths[-1]
         paths_to_keep = [p for p in current_paths if p != path_to_delete]
         with self.file.open("w") as f:
             for path in paths_to_keep:
@@ -112,6 +116,3 @@ class SessionStore:
 
     def delete_file(self) -> None:
         self.file.unlink(missing_ok=True)
-
-    def _normalize(self, entry: str) -> str:
-        return str(Path(entry))

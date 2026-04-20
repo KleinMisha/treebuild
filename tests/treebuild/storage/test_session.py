@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from treebuild.core.exceptions import DuplicatePathError
-from treebuild.storage.session import SessionStore
+from treebuild.storage.session import SessionStore, normalize
 
 
 def test_read_and_write_paths(session_file: Path) -> None:
@@ -15,7 +15,7 @@ def test_read_and_write_paths(session_file: Path) -> None:
     session.write_path("/path/to/another/file")
     written_paths = session.read_paths()
     expected_paths = [
-        str(Path(fn)) for fn in ["/path/to/file", "/path/to/another/file"]
+        normalize(fn) for fn in ["/path/to/file", "/path/to/another/file"]
     ]
 
     assert set(written_paths) == set(expected_paths)
@@ -35,7 +35,7 @@ def test_removing_last_path(session_file: Path) -> None:
     session.write_path("/second/path/")
     session.write_path("/third/path/")
     session.remove_path()
-    expected_paths = [str(Path(fn)) for fn in ["/first/path/", "/second/path/"]]
+    expected_paths = [normalize(fn) for fn in ["/first/path/", "/second/path/"]]
     stored_paths = session.read_paths()
     assert set(stored_paths) == set(expected_paths)
 
@@ -47,7 +47,7 @@ def test_removing_middle_entry(session_file: Path) -> None:
     session.write_path("/second/path/")
     session.write_path("/third/path/")
     session.remove_path(entry="/second/path/")
-    expected_paths = [str(Path(fn)) for fn in ["/first/path/", "/third/path/"]]
+    expected_paths = [normalize(fn) for fn in ["/first/path/", "/third/path/"]]
     stored_paths = session.read_paths()
     assert set(stored_paths) == set(expected_paths)
 
@@ -62,12 +62,20 @@ def test_removing_all_paths(session_file: Path) -> None:
     assert session.read_paths() == []
 
 
-def test_cannot_write_duplicate(session_file: Path) -> None:
+@pytest.mark.parametrize(
+    "duplicate",
+    [
+        "/first/path",  # exact duplicate
+        "./first/path",  # relative to cwd
+        "/first/path ",  # trailing spaces (normalization removes them)
+    ],
+)
+def test_cannot_write_duplicate(session_file: Path, duplicate: str) -> None:
     """Attempting to write a duplicate path should raise an exception."""
     session = SessionStore(session_file)
     session.write_path("/first/path/")
     with pytest.raises(DuplicatePathError):
-        session.write_path("/first/path/")
+        session.write_path(duplicate)
 
 
 def test_duplicate_first_normalizes_entry(session_file: Path) -> None:
@@ -169,7 +177,7 @@ def test_read_and_write(session_file: Path) -> None:
     for p in paths:
         session.write_path(p)
 
-    assert set(session.read_paths()) == set(paths)
+    assert set(session.read_paths()) == set([normalize(p) for p in paths])
     assert session.read_root() == root_name
 
 
