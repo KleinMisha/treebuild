@@ -13,13 +13,15 @@ from treebuild.rendering.factory import RenderMethod
 
 # DEFAULTS TO FALL BACK TO:
 DEFAULT_SESSION_FILE = Path().home() / ".config" / "treebuild" / "session_tree.txt"
+ENV_PREFIX = "TREEBUILD_"
 
 
 class TreeBuildSettings(BaseSettings):
     """Default settings"""
 
     model_config = SettingsConfigDict(
-        toml_file=Path().home() / ".config" / "treebuild" / "config.toml"
+        toml_file=Path().home() / ".config" / "treebuild" / "config.toml",
+        env_prefix=ENV_PREFIX,
     )
     session_file: Path = DEFAULT_SESSION_FILE
     renderer: RenderMethod = RenderMethod.PLAIN
