@@ -10,7 +10,7 @@ from treebuild.rendering.plain_text_renderer import PlainTextRenderer
 from treebuild.tree.builder import TreeBuilder
 
 
-## --- treebuild harvest ---
+## --- treebuild harvest text---
 def test_harvest_plain_text_renderer(
     active_session: tuple[Path, dict[str, str]],
 ) -> None:
@@ -19,7 +19,7 @@ def test_harvest_plain_text_renderer(
     runner = CliRunner(env=environment)
     runner.invoke(app, ["grow", "some.file", "a/folder/with/some/file.inside"])
     runner.invoke(app, ["seed", "project-name"])
-    result = runner.invoke(app, ["harvest", "--renderer", "plain"])
+    result = runner.invoke(app, ["harvest", "text", "--renderer", "plain"])
     assert result.exit_code == 0
     assert result.stdout != ""
 
@@ -44,7 +44,7 @@ def test_harvest_render_and_write_to_file(
     runner.invoke(app, ["grow", "some.file", "a/folder/with/some/file.inside"])
     runner.invoke(app, ["seed", "project-name"])
     result = runner.invoke(
-        app, ["harvest", "--renderer", "plain", "--output", str(tmp_file)]
+        app, ["harvest", "text", "--renderer", "plain", "--output", str(tmp_file)]
     )
     assert result.exit_code == 0
     assert str(tmp_file) in result.stdout
@@ -64,7 +64,7 @@ def test_harvest_exits_if_tree_is_empty(
     """No leaves/branches or a root? Nothing to render."""
     _, environment = active_session
     runner = CliRunner(env=environment)
-    result = runner.invoke(app, ["harvest", "--renderer", "plain"])
+    result = runner.invoke(app, ["harvest", "text", "--renderer", "plain"])
     assert result.exit_code == 1
     assert result.stdout != ""
 
@@ -77,10 +77,12 @@ def test_harvest_show_root_ignored_if_no_root_name(
     runner = CliRunner(env=environment)
     runner.invoke(app, ["grow", "some.file", "a/folder/with/some/file.inside"])
 
-    result = runner.invoke(app, ["harvest", "--renderer", "plain", "--show-root"])
+    result = runner.invoke(
+        app, ["harvest", "text", "--renderer", "plain", "--show-root"]
+    )
     output_with_flag = result.stdout
 
-    result = runner.invoke(app, ["harvest", "--renderer", "plain"])
+    result = runner.invoke(app, ["harvest", "text", "--renderer", "plain"])
     output_no_flag = result.stdout
 
     # check additional message is shown:
@@ -97,6 +99,6 @@ def test_harvest_needs_active_session(
     """Cannot harvest without starting a tree."""
     _, environment = empty_session
     runner = CliRunner(env=environment)
-    result = runner.invoke(app, ["harvest", "--renderer", "plain"])
+    result = runner.invoke(app, ["harvest", "text", "--renderer", "plain"])
     assert result.exit_code == 1
     assert result.stdout != ""
