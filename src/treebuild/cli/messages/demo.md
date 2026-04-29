@@ -36,8 +36,9 @@ Shows the current root and all paths added so far.
 ### 4. Harvest the tree
 
 ```bash
-treebuild harvest
+treebuild harvest text
 ```
 
 Renders your tree to the terminal:
+
 
