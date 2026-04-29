@@ -22,6 +22,7 @@ class Renderer(ABC):
 
     def render_tree(self, tree: Tree, include_root: bool = False) -> str:
         """Render the directory tree structure."""
+
         # add root name:
         first_line = tree.root.name if include_root else "."
         # Start recursion, from empty set of flags.

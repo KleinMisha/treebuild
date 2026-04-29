@@ -22,12 +22,12 @@ class Branch:
 
     name: str
     leaves: list[str] = field(default_factory=list[str])
-    branches: list[Branch] = field(default_factory=list["Branch"])
+    branches: list["Branch"] = field(default_factory=list["Branch"])
 
     def add_leaf(self, filename: str) -> None:
         self.leaves.append(filename)
 
-    def add_child_branch(self, branch: Branch) -> None:
+    def add_child_branch(self, branch: "Branch") -> None:
         self.branches.append(branch)
 
 
