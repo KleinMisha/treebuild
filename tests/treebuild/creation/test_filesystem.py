@@ -1,7 +1,6 @@
 """unit tests for src/treebuild/creation/filesystem.py"""
 
 from pathlib import Path
-from typing import Generator
 
 from pytest import MonkeyPatch
 
