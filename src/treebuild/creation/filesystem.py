@@ -7,10 +7,14 @@ from typing import Optional
 from treebuild.tree.branches import Branch, Tree
 
 
-class FileCreator:
-    """Creates / Deletes files (+ directories) in the file system."""
+class FileSystemWriter:
+    """Writes / Deletes files (+ directories) in the file system.
 
-    def scaffold_tree(self, tree: Tree, base_path: Optional[Path] = None) -> None:
+
+    #TODO Add dry-run mode.
+    """
+
+    def write_tree(self, tree: Tree, base_path: Optional[Path] = None) -> None:
         """Build all files/directories based on the given Tree."""
 
         # Create root directory
@@ -19,9 +23,9 @@ class FileCreator:
         root_path.mkdir(parents=True, exist_ok=True)
 
         # start recursion
-        self._scaffold_branch(tree.root, root_path)
+        self._write_branch(tree.root, root_path)
 
-    def _scaffold_branch(self, branch: Branch, current_path: Path) -> None:
+    def _write_branch(self, branch: Branch, current_path: Path) -> None:
         """
         Recursive workhorse: Create child directories (and files within them)
         """
@@ -33,14 +37,14 @@ class FileCreator:
             child_path.mkdir(parents=True, exist_ok=True)
 
             # traverse into the child directory to check for additional children
-            self._scaffold_branch(child_dir, child_path)
+            self._write_branch(child_dir, child_path)
 
         # Create files inside the current directory
         for filename in branch.leaves:
             file_path = current_path / filename
             file_path.touch(exist_ok=True)
 
-    def teardown_tree(self, tree: Tree, base_path: Optional[Path] = None) -> None:
+    def delete_tree(self, tree: Tree, base_path: Optional[Path] = None) -> None:
         """Delete all files/directory of the given Tree"""
 
         base_path = base_path or Path.cwd()
