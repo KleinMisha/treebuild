@@ -7,17 +7,17 @@ from typer import Exit, Option, Typer, echo
 
 from treebuild.cli.helpers import ensure_session_exists, load_message
 from treebuild.core.settings import get_settings
-from treebuild.rendering.factory import RenderMethod, get_renderer
+from treebuild.harvest.render_factory import RenderMethod, get_renderer
 from treebuild.storage.session import SessionStore
 from treebuild.tree.builder import TreeBuilder
 
 harvest_app = Typer(invoke_without_command=True, name="harvest")
 
 
-@harvest_app.callback()
-def harvest(
+@harvest_app.command()
+def text(
     method: Annotated[
-        RenderMethod | None, Option("--renderer", help="Rendering method.")
+        RenderMethod | None, Option("--renderer", "-r", help="Rendering method.")
     ] = None,
     show_root: Annotated[
         bool,
@@ -79,3 +79,18 @@ def harvest(
     if to_file:
         to_file.write_text(rendering)
         echo(f"Written into file: {str(to_file)}")
+
+
+@harvest_app.command()
+def scaffold() -> None:
+    """
+    Create the files and directories.
+    """
+
+
+@harvest_app.command()
+def teardown() -> None:
+    """
+    Remove the files and directories.
+    (undoes `treebuild harvest scaffold`)
+    """
