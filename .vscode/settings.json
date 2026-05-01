@@ -31,7 +31,9 @@
     "cSpell.ignoreWords": [
         "treebuild"
     ],
-    "cSpell.words": [],
+    "cSpell.words": [
+        "Materializer"
+    ],
 
 
 

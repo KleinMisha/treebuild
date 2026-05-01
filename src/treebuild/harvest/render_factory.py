@@ -2,8 +2,8 @@
 
 from enum import StrEnum, auto
 
-from treebuild.creation.plain_text_renderer import PlainTextRenderer
-from treebuild.creation.renderer import Renderer
+from treebuild.harvest.plain_text_renderer import PlainTextRenderer
+from treebuild.harvest.renderer import Renderer
 
 
 class RenderMethod(StrEnum):

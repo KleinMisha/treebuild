@@ -6,7 +6,7 @@ from typer.testing import CliRunner
 
 from treebuild.cli.entrypoint import app
 from treebuild.cli.helpers import load_message
-from treebuild.creation.plain_text_renderer import PlainTextRenderer
+from treebuild.harvest.plain_text_renderer import PlainTextRenderer
 from treebuild.tree.builder import TreeBuilder
 
 

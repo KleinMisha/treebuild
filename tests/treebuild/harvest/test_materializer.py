@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pytest import MonkeyPatch
 
-from treebuild.creation.filesystem import FileSystemWriter
+from treebuild.harvest.materializer import Materializer
 from treebuild.tree.branches import Branch, Tree
 
 
@@ -12,12 +12,12 @@ from treebuild.tree.branches import Branch, Tree
 def test_roundtrip_empty_tree(tree: Tree, tmp_path: Path) -> None:
     """Even if the tree is empty, should still create a directory with the given root name."""
     # write files
-    fs = FileSystemWriter()
-    fs.write_tree(tree, base_path=tmp_path)
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path)
     assert (tmp_path / tree.root.name).exists()
 
     # delete files:
-    fs.delete_tree(tree, base_path=tmp_path)
+    materializer.dematerialize_tree(tree, base_path=tmp_path)
     assert not (tmp_path / tree.root.name).exists()
 
 
@@ -32,12 +32,12 @@ def test_roundtrip_tree_only_files_in_root(tree: Tree, tmp_path: Path) -> None:
         tree.add_leaf(f)
 
     # write files
-    fs = FileSystemWriter()
-    fs.write_tree(tree, base_path=tmp_path)
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path)
     assert all(item.exists() for item in expected_items)
 
     # delete files
-    fs.delete_tree(tree, base_path=tmp_path)
+    materializer.dematerialize_tree(tree, base_path=tmp_path)
     assert not any(item.exists() for item in expected_items)
 
 
@@ -59,12 +59,12 @@ def test_roundtrip_tree_w_single_subdir_under_root(tree: Tree, tmp_path: Path) -
     tree.add_branch(folder)
 
     # write files
-    fs = FileSystemWriter()
-    fs.write_tree(tree, base_path=tmp_path)
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path)
     assert all(item.exists() for item in expected_items)
 
     # delete files
-    fs.delete_tree(tree, base_path=tmp_path)
+    materializer.dematerialize_tree(tree, base_path=tmp_path)
     assert not any(item.exists() for item in expected_items)
 
 
@@ -102,12 +102,12 @@ def test_roundtrip_tree_multiple_subdirs_at_same_level(
     tree.add_branch(second_folder)
 
     # write files
-    fs = FileSystemWriter()
-    fs.write_tree(tree, base_path=tmp_path)
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path)
     assert all(item.exists() for item in expected_items)
 
     # delete files
-    fs.delete_tree(tree, base_path=tmp_path)
+    materializer.dematerialize_tree(tree, base_path=tmp_path)
     assert not any(item.exists() for item in expected_items)
 
 
@@ -134,12 +134,12 @@ def test_roundtrip_tree_nested_subdirs(tree: Tree, tmp_path: Path) -> None:
     tree.add_branch(first_folder)
 
     # write files
-    fs = FileSystemWriter()
-    fs.write_tree(tree, base_path=tmp_path)
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path)
     assert all(item.exists() for item in expected_items)
 
     # delete files
-    fs.delete_tree(tree, base_path=tmp_path)
+    materializer.dematerialize_tree(tree, base_path=tmp_path)
     assert not any(item.exists() for item in expected_items)
 
 
@@ -184,12 +184,12 @@ def test_roundtrip_tree_mixed_leaves_and_branches(tree: Tree, tmp_path: Path) ->
     tree.add_branch(first_folder)
 
     # write files
-    fs = FileSystemWriter()
-    fs.write_tree(tree, base_path=tmp_path)
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path)
     assert all(item.exists() for item in expected_items)
 
     # delete files
-    fs.delete_tree(tree, base_path=tmp_path)
+    materializer.dematerialize_tree(tree, base_path=tmp_path)
     assert not any(item.exists() for item in expected_items)
 
 
@@ -202,9 +202,9 @@ def test_roundtrip_defaults_to_cwd(
     monkeypatch.chdir(tmp_path)
 
     # test with just an empty root directory
-    fs = FileSystemWriter()
-    fs.write_tree(tree)
+    materializer = Materializer()
+    materializer.materialize_tree(tree)
     assert (Path.cwd() / tree.root.name).exists()
 
-    fs.delete_tree(tree)
+    materializer.dematerialize_tree(tree)
     assert not (Path.cwd() / tree.root.name).exists()

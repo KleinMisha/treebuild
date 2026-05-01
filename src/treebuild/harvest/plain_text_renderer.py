@@ -1,6 +1,6 @@
 """Plain text characters in renderer"""
 
-from treebuild.creation.renderer import Connector, Renderer
+from treebuild.harvest.renderer import Connector, Renderer
 
 
 class PlainTextRenderer(Renderer):

@@ -9,7 +9,7 @@ from typer import Argument, Exit, Option, Typer, echo
 from treebuild.cli.helpers import ensure_session_exists, load_message
 from treebuild.core.exceptions import DuplicatePathError
 from treebuild.core.settings import get_settings
-from treebuild.creation.render_factory import RenderMethod, get_renderer
+from treebuild.harvest.render_factory import RenderMethod, get_renderer
 from treebuild.storage.session import SessionStore, normalize
 from treebuild.tree.builder import TreeBuilder
 
