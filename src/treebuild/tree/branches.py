@@ -25,6 +25,11 @@ class Branch:
     leaves: list[str] = field(default_factory=list[str])
     branches: list["Branch"] = field(default_factory=list["Branch"])
 
+    @property
+    def is_empty(self) -> bool:
+        """An empty directory has no child directories or files inside it."""
+        return not (self.leaves or self.branches)
+
     def add_leaf(self, filename: str) -> None:
         self.leaves.append(filename)
 
@@ -60,6 +65,11 @@ class Tree:
     def add_branch(self, branch: Branch) -> None:
         """Wrapper for convenience"""
         self.root.add_child_branch(branch)
+
+    @property
+    def is_empty(self) -> bool:
+        "Wrapper for convenience"
+        return self.root.is_empty
 
     @property
     def paths(self) -> list[str]:

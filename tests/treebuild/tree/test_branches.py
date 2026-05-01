@@ -219,3 +219,57 @@ def test_paths_mixed_leaves_and_branches() -> None:
 
     expected_paths = [str(p) for p in expected_items]
     assert set(tree.paths) == set(expected_paths)
+
+
+# --- Check for empty branches ---
+def test_single_empty_directory() -> None:
+    """A single directory with no items in it is empty."""
+    branch = Branch("directory")
+    assert branch.is_empty
+
+
+def test_single_directory_w_file() -> None:
+    """A single directory with a file inside it."""
+    branch = Branch("directory", leaves=["some.file"])
+    assert not branch.is_empty
+
+
+def test_single_directory_w_child_dir() -> None:
+    """A single directory with another child directory inside it."""
+    branch = Branch("directory", branches=[Branch("subdir")])
+    assert not branch.is_empty
+
+
+def test_nested_structure() -> None:
+    """A mix of empty and non-empty branches"""
+    parent = Branch("parent")
+    first_child = Branch("first", leaves=["some.file", "another.file"])
+    second_child = Branch("second", leaves=["some.file"])
+    third_child = Branch("third")
+    first_child.add_child_branch(second_child)
+    parent.add_child_branch(first_child)
+    parent.add_child_branch(third_child)
+    assert not parent.is_empty
+    assert not first_child.is_empty
+    assert not second_child.is_empty
+    assert third_child.is_empty
+
+
+def test_tree_is_empty_root() -> None:
+    """Test wrapper on tree level: True outcome"""
+    tree = Tree(Branch("root"))
+    assert tree.is_empty
+
+
+def test_tree_w_file_at_root_level_not_empty() -> None:
+    """Test wrapper on tree level: False outcome"""
+    tree = Tree(Branch("root"))
+    tree.add_leaf("some.file")
+    assert not tree.is_empty
+
+
+def test_tree_w_directory_at_root_level_not_empty() -> None:
+    """Test wrapper on tree level: False outcome"""
+    tree = Tree(Branch("root"))
+    tree.add_branch(Branch("folder"))
+    assert not tree.is_empty
