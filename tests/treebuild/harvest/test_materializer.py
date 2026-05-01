@@ -23,22 +23,20 @@ def test_roundtrip_empty_tree(tree: Tree, tmp_path: Path) -> None:
 
 def test_roundtrip_tree_only_files_in_root(tree: Tree, tmp_path: Path) -> None:
     """A directory with no subdirectories, just files"""
-    # Construct set of expected paths
-    filenames = sorted(["file_1.txt", "code.py", "more_code.java", "dataset.xlsx"])
-    expected_items = [tmp_path / tree.root.name / Path(fn) for fn in filenames]
 
     # build tree
+    filenames = sorted(["file_1.txt", "code.py", "more_code.java", "dataset.xlsx"])
     for f in filenames:
         tree.add_leaf(f)
 
     # write files
     materializer = Materializer()
     materializer.materialize_tree(tree, base_path=tmp_path)
-    assert all(item.exists() for item in expected_items)
+    assert all((tmp_path / path).exists() for path in tree.paths)
 
     # delete files
     materializer.dematerialize_tree(tree, base_path=tmp_path)
-    assert not any(item.exists() for item in expected_items)
+    assert not any((tmp_path / path).exists() for path in tree.paths)
 
 
 def test_roundtrip_tree_w_single_subdir_under_root(tree: Tree, tmp_path: Path) -> None:
@@ -46,13 +44,9 @@ def test_roundtrip_tree_w_single_subdir_under_root(tree: Tree, tmp_path: Path) -
     Directory structure: ./subdir/file.txt , given there are a couple of files in this sub-directory
     """
 
-    # Construct set of expected paths
-    filenames = sorted(["file_1.txt", "code.py", "more_code.java", "dataset.xlsx"])
-    expected_items = [
-        tmp_path / tree.root.name / "folder" / Path(fn) for fn in filenames
-    ]
-
     # build tree
+    filenames = sorted(["file_1.txt", "code.py", "more_code.java", "dataset.xlsx"])
+
     folder = Branch("folder")
     for f in filenames:
         folder.add_leaf(f)
@@ -61,11 +55,11 @@ def test_roundtrip_tree_w_single_subdir_under_root(tree: Tree, tmp_path: Path) -
     # write files
     materializer = Materializer()
     materializer.materialize_tree(tree, base_path=tmp_path)
-    assert all(item.exists() for item in expected_items)
+    assert all((tmp_path / path).exists() for path in tree.paths)
 
     # delete files
     materializer.dematerialize_tree(tree, base_path=tmp_path)
-    assert not any(item.exists() for item in expected_items)
+    assert not any((tmp_path / path).exists() for path in tree.paths)
 
 
 def test_roundtrip_tree_multiple_subdirs_at_same_level(
@@ -74,22 +68,13 @@ def test_roundtrip_tree_multiple_subdirs_at_same_level(
     """
     Directory structure: ./subdir/file.txt, and ./second_folder/file.txt.
     """
-    # Construct set of expected paths
+
+    # build tree
     files_in_first_folder = sorted(
         ["first_file.py", "second_file.css", "third_file.md"]
     )
     files_in_second_folder = sorted(["another_file.txt"])
-    expected_items = [
-        tmp_path / tree.root.name / "folder1" / Path(fn) for fn in files_in_first_folder
-    ]
-    expected_items.extend(
-        [
-            tmp_path / tree.root.name / "folder2" / Path(fn)
-            for fn in files_in_second_folder
-        ]
-    )
 
-    # build tree
     first_folder = Branch("folder1")
     for f in sorted(files_in_first_folder):
         first_folder.add_leaf(f)
@@ -104,27 +89,23 @@ def test_roundtrip_tree_multiple_subdirs_at_same_level(
     # write files
     materializer = Materializer()
     materializer.materialize_tree(tree, base_path=tmp_path)
-    assert all(item.exists() for item in expected_items)
+    assert all((tmp_path / path).exists() for path in tree.paths)
 
     # delete files
     materializer.dematerialize_tree(tree, base_path=tmp_path)
-    assert not any(item.exists() for item in expected_items)
+    assert not any((tmp_path / path).exists() for path in tree.paths)
 
 
 def test_roundtrip_tree_nested_subdirs(tree: Tree, tmp_path: Path) -> None:
     """
     Directory structure: ./subdir/subsubdir/file.txt (a file in a nested directory)
     """
-    # Construct set of expected paths
+
+    # build tree
     files_in_second_folder = sorted(
         ["first_file.py", "second_file.css", "third_file.md"]
     )
-    expected_items = [
-        tmp_path / tree.root.name / "folder1" / "folder2" / Path(fn)
-        for fn in files_in_second_folder
-    ]
 
-    # build tree
     first_folder = Branch("folder1")
     second_folder = Branch("folder2")
     for f in sorted(files_in_second_folder):
@@ -136,18 +117,19 @@ def test_roundtrip_tree_nested_subdirs(tree: Tree, tmp_path: Path) -> None:
     # write files
     materializer = Materializer()
     materializer.materialize_tree(tree, base_path=tmp_path)
-    assert all(item.exists() for item in expected_items)
+    assert all((tmp_path / path).exists() for path in tree.paths)
 
     # delete files
     materializer.dematerialize_tree(tree, base_path=tmp_path)
-    assert not any(item.exists() for item in expected_items)
+    assert not any((tmp_path / path).exists() for path in tree.paths)
 
 
 def test_roundtrip_tree_mixed_leaves_and_branches(tree: Tree, tmp_path: Path) -> None:
     """
     Directory structure: ./file_in_root.txt, ./subdir/file.py, ./subdir/subsubdir/more_files.py
     """
-    # Construct set of expected paths
+
+    # build tree
     files_in_root = sorted(["file_in_root_dir.txt", "another_file_in_root_dir.md"])
     files_in_first_folder = sorted(
         ["first_file.py", "second_file.css", "empty_directory"]
@@ -155,20 +137,7 @@ def test_roundtrip_tree_mixed_leaves_and_branches(tree: Tree, tmp_path: Path) ->
     files_in_second_folder = sorted(
         ["third_file.py", "fourth_file.py", "fifth_file.readme"]
     )
-    expected_items = [tmp_path / tree.root.name / Path(fn) for fn in files_in_root]
-    expected_items.extend(
-        [
-            tmp_path / tree.root.name / "first_folder" / Path(fn)
-            for fn in files_in_first_folder
-        ]
-    )
-    expected_items.extend(
-        [
-            tmp_path / tree.root.name / "first_folder" / "second_folder" / Path(fn)
-            for fn in files_in_second_folder
-        ]
-    )
-    # build tree
+
     for f in files_in_root:
         tree.add_leaf(f)
 
@@ -186,11 +155,11 @@ def test_roundtrip_tree_mixed_leaves_and_branches(tree: Tree, tmp_path: Path) ->
     # write files
     materializer = Materializer()
     materializer.materialize_tree(tree, base_path=tmp_path)
-    assert all(item.exists() for item in expected_items)
+    assert all((tmp_path / path).exists() for path in tree.paths)
 
     # delete files
     materializer.dematerialize_tree(tree, base_path=tmp_path)
-    assert not any(item.exists() for item in expected_items)
+    assert not any((tmp_path / path).exists() for path in tree.paths)
 
 
 def test_roundtrip_defaults_to_cwd(
