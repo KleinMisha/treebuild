@@ -89,7 +89,7 @@ def test_roundtrip_tree_multiple_subdirs_at_same_level(
         ]
     )
 
-    # built tree
+    # build tree
     first_folder = Branch("folder1")
     for f in sorted(files_in_first_folder):
         first_folder.add_leaf(f)
@@ -124,7 +124,7 @@ def test_roundtrip_tree_nested_subdirs(tree: Tree, tmp_path: Path) -> None:
         for fn in files_in_second_folder
     ]
 
-    # built tree
+    # build tree
     first_folder = Branch("folder1")
     second_folder = Branch("folder2")
     for f in sorted(files_in_second_folder):
@@ -168,7 +168,7 @@ def test_roundtrip_tree_mixed_leaves_and_branches(tree: Tree, tmp_path: Path) ->
             for fn in files_in_second_folder
         ]
     )
-    # built tree
+    # build tree
     for f in files_in_root:
         tree.add_leaf(f)
 
