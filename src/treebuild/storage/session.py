@@ -9,7 +9,11 @@ ROOT_NAME_PREFIX = "# ROOT:"
 
 
 def normalize(entry: str) -> str:
-    return str(Path(entry.strip().lstrip("/")))
+    # Allow user to enter directory names as "folder/", i.e. with a trailing slash.
+    stripped = entry.strip().lstrip("/")
+    is_dir = stripped.endswith("/")
+    normalized = str(Path(stripped))
+    return normalized + "/" if is_dir else normalized
 
 
 class SessionStore:
