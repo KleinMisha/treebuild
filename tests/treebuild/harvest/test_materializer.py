@@ -1,8 +1,9 @@
 """unit tests for src/treebuild/creation/filesystem.py"""
 
 from pathlib import Path
+from unittest.mock import patch
 
-from pytest import MonkeyPatch
+from pytest import LogCaptureFixture, MonkeyPatch
 
 from treebuild.harvest.materializer import Materializer
 from treebuild.tree.branches import Branch, Tree
@@ -256,3 +257,71 @@ def test_no_gitkeep_if_set_to_false(tree: Tree, tmp_path: Path) -> None:
     materializer.materialize_tree(tree, base_path=tmp_path, gitkeep=False)
     assert all((tmp_path / path).exists() for path in tree.paths)
     assert not (tmp_path / tree.root.name / folder.name / ".gitkeep").exists()
+
+
+# --- Test dry-run mode: only print stuff, do not actually create anything ---
+def test_materialize_dry_run(
+    tree: Tree, tmp_path: Path, caplog: LogCaptureFixture
+) -> None:
+    """If run in dry-run mode, only log actions that would've been carried out."""
+
+    # build tree
+    first_folder = Branch("first")
+    second_folder = Branch("second")
+    second_folder.add_leaf("some.file")
+    third_folder = Branch("third")
+    first_folder.add_child_branch(second_folder)
+    tree.add_branch(first_folder)
+    tree.add_branch(third_folder)
+
+    # dry-run
+    with (
+        patch("treebuild.harvest.materializer.Path.mkdir") as mock_mkdir,
+        patch("treebuild.harvest.materializer.Path.touch") as mock_touch,
+    ):
+        materializer = Materializer()
+        materializer.materialize_tree(
+            tree, base_path=tmp_path, gitkeep=True, dry_run=True
+        )
+        mock_mkdir.assert_not_called()
+        mock_touch.assert_not_called()
+    assert not any((tmp_path / path).exists() for path in tree.paths)
+    assert all(str(tmp_path / path) in caplog.text for path in tree.paths)
+
+
+def test_dematerialize_dry_run(
+    tree: Tree, tmp_path: Path, caplog: LogCaptureFixture
+) -> None:
+    """If run in dry-run mode, only log actions that would've been carried out."""
+    # build tree
+    first_folder = Branch("first")
+    second_folder = Branch("second")
+    second_folder.add_leaf("some.file")
+    third_folder = Branch("third")
+    first_folder.add_child_branch(second_folder)
+    tree.add_branch(first_folder)
+    tree.add_branch(third_folder)
+
+    # first build the tree
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path, gitkeep=True)
+
+    # dry-run dematerialize
+    with patch("treebuild.harvest.materializer.shutil.rmtree") as mock_rmtree:
+        materializer.dematerialize_tree(tree, base_path=tmp_path, dry_run=True)
+        mock_rmtree.assert_not_called()
+
+    assert all((tmp_path / path).exists() for path in tree.paths)
+    assert all(str(tmp_path / path) in caplog.text for path in tree.paths)
+
+
+# --- Edge case: removing before creation ---
+def test_do_not_remove_anything_if_root_does_not_exist(
+    tree: Tree, tmp_path: Path
+) -> None:
+    """If the root directory is not found at the location specified, should be a no-op."""
+
+    with patch("treebuild.harvest.materializer.shutil.rmtree") as mock_rmtree:
+        materializer = Materializer()
+        materializer.dematerialize_tree(tree, base_path=tmp_path, dry_run=False)
+        mock_rmtree.assert_not_called()
