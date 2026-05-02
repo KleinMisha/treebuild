@@ -72,7 +72,9 @@ class Materializer:
 
         # If no root directory anymore...
         if not root_path.exists():
-            logging.info(f"Nothing to remove. Root directory not found: {root_path}")
+            logging.info(
+                f"Nothing to remove. Root directory not found: {base_path / root_path}"
+            )
             return
 
         # If dry-run (do not do anything besides logging)
