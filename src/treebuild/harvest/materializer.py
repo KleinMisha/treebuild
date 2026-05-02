@@ -15,7 +15,9 @@ class Materializer:
     #TODO include option to automatically add ".gitkeep" files in otherwise empty directories.
     """
 
-    def materialize_tree(self, tree: Tree, base_path: Optional[Path] = None) -> None:
+    def materialize_tree(
+        self, tree: Tree, base_path: Optional[Path] = None, gitkeep: bool = False
+    ) -> None:
         """Build all files/directories based on the given Tree."""
 
         # Create root directory
@@ -24,10 +26,17 @@ class Materializer:
         root_path.mkdir(parents=True, exist_ok=True)
         logging.debug(f"Created root directory: {root_path}")
 
-        # start recursion
-        self._materialize_branch(tree.root, root_path)
+        # add a `.gitkeep` file in empty repository
+        if tree.is_empty and gitkeep:
+            (root_path / ".gitkeep").touch()
+            logging.debug(f"Created file: {root_path / '.gitkeep'}")
 
-    def _materialize_branch(self, branch: Branch, current_path: Path) -> None:
+        # start recursion
+        self._materialize_branch(tree.root, root_path, gitkeep)
+
+    def _materialize_branch(
+        self, branch: Branch, current_path: Path, gitkeep: bool = False
+    ) -> None:
         """
         Recursive workhorse: Create child directories (and files within them)
         """
@@ -39,8 +48,12 @@ class Materializer:
             child_path.mkdir(parents=True, exist_ok=True)
             logging.debug(f"Created child directory: {child_path}")
 
+            if child_dir.is_empty and gitkeep:
+                (child_path / ".gitkeep").touch()
+                logging.debug(f"Created file: {child_path / '.gitkeep'}")
+
             # traverse into the child directory to check for additional children
-            self._materialize_branch(child_dir, child_path)
+            self._materialize_branch(child_dir, child_path, gitkeep)
 
         # Create files inside the current directory
         for filename in branch.leaves:

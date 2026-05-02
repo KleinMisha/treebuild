@@ -177,3 +177,82 @@ def test_roundtrip_defaults_to_cwd(
 
     materializer.dematerialize_tree(tree)
     assert not (Path.cwd() / tree.root.name).exists()
+
+
+# --- Test adding .gitkeep, to empty directories ---
+def test_add_gitkeep_to_root(tree: Tree, tmp_path: Path) -> None:
+    """An empty tree, should now contain a `.gitkeep` file after materializing"""
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path, gitkeep=True)
+    assert (tmp_path / tree.root.name).exists()
+    assert (tmp_path / tree.root.name / ".gitkeep").exists()
+
+
+def test_gitkeep_only_added_if_root_empty(tree: Tree, tmp_path: Path) -> None:
+    """No `.gitkeep` file should be added if the directory isn't empty."""
+    tree.add_leaf("some.file")
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path, gitkeep=True)
+    assert (tmp_path / tree.root.name).exists()
+    assert not (tmp_path / tree.root.name / ".gitkeep").exists()
+
+
+def test_add_gitkeep_empty_child_branch(tree: Tree, tmp_path: Path) -> None:
+    """Adding a `.gitkeep` file (no contents) into an empty child directory."""
+    # build tree
+    folder = Branch("folder")
+    tree.add_branch(folder)
+
+    # write files
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path, gitkeep=True)
+    assert all((tmp_path / path).exists() for path in tree.paths)
+    assert (tmp_path / tree.root.name / folder.name / ".gitkeep").exists()
+
+
+def test_gitkeep_only_added_if_child_branch_empty(tree: Tree, tmp_path: Path) -> None:
+    """No `.gitkeep` file should be added if the directory isn't empty."""
+    # build tree
+    filenames = sorted(["file_1.txt", "code.py", "more_code.java", "dataset.xlsx"])
+
+    folder = Branch("folder")
+    for f in filenames:
+        folder.add_leaf(f)
+    tree.add_branch(folder)
+
+    # write files
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path, gitkeep=True)
+    assert all((tmp_path / path).exists() for path in tree.paths)
+    assert not (tmp_path / tree.root.name / folder.name / ".gitkeep").exists()
+
+
+def test_add_gitkeep_nested_subdir(tree: Tree, tmp_path: Path) -> None:
+    """Make sure gitkeep parameter is carried over through recursion correctly."""
+    # build tree
+    first_folder = Branch("first")
+    second_folder = Branch("second")
+    first_folder.add_child_branch(second_folder)
+    tree.add_branch(first_folder)
+
+    # write files
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path, gitkeep=True)
+    assert all((tmp_path / path).exists() for path in tree.paths)
+    assert not (tmp_path / tree.root.name / first_folder.name / ".gitkeep").exists()
+    assert (
+        tmp_path / tree.root.name / first_folder.name / second_folder.name / ".gitkeep"
+    ).exists()
+
+
+def test_no_gitkeep_if_set_to_false(tree: Tree, tmp_path: Path) -> None:
+    """Even if directory is empty, no `gitkeep` should be added if parameter is set to FALSE."""
+    # build tree
+    folder = Branch("folder")
+    tree.add_branch(folder)
+
+    # write files
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path=tmp_path, gitkeep=False)
+    assert all((tmp_path / path).exists() for path in tree.paths)
+    assert not (tmp_path / tree.root.name / folder.name / ".gitkeep").exists()
