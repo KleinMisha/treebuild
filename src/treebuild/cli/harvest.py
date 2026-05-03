@@ -88,7 +88,8 @@ def text(
 @harvest_app.command()
 def scaffold(
     location: Annotated[
-        Path | None, Option("--location", "-l", help="Where to place the root.")
+        Path | None,
+        Option("--location", "-l", help="Where to place the root directory."),
     ] = None,
     gitkeep: Annotated[
         bool,
@@ -97,9 +98,6 @@ def scaffold(
             help="Adds dummy `.gitkeep` files into empty directories, such that git includes them.",
         ),
     ] = False,
-    root: Annotated[
-        str | None, Option(help="Name of root directory, if not set prior.")
-    ] = None,
     dry_run: Annotated[
         bool,
         Option(
@@ -118,7 +116,7 @@ def scaffold(
 
     # check name of root directory is set:
     # NOTE: The 'walrus operator' (:=) will automatically assign the value to `root_name`, which will persist if we exit this clause (and thus did not raise Exit(1))
-    if not (root_name := (root or session.read_root())):
+    if not (root_name := session.read_root() or None):
         msg = load_message("harvest_scaffold_no_root_set.md")
         echo(msg)
         raise Exit(1)
@@ -137,8 +135,45 @@ def scaffold(
 
 
 @harvest_app.command()
-def teardown() -> None:
+def teardown(
+    location: Annotated[
+        Path | None,
+        Option("--location", "-l", help="Where to find the root directory."),
+    ] = None,
+    dry_run: Annotated[
+        bool,
+        Option(
+            "--dry-run", help="Only print which files and directories would be removed."
+        ),
+    ] = False,
+) -> None:
     """
     Remove the files and directories.
     (undoes `treebuild harvest scaffold`)
     """
+    # Check if file for session exists:
+    settings = get_settings()
+    session_file = settings.session_file
+    ensure_session_exists(session_file)
+    session = SessionStore(session_file)
+
+    # Build the tree
+    paths = [Path(entry) for entry in session.read_paths()]
+    if not (root_name := session.read_root() or None):
+        msg = load_message("harvest_teardown_no_root_set.md")
+        echo(msg)
+        raise Exit(1)
+    builder = TreeBuilder(root_name=root_name, paths=paths)
+    tree = builder.assemble_tree()
+
+    # check if root directory exists
+    base_path = location or Path.cwd()
+    if not (base_path / tree.root.name).exists():
+        msg = load_message("harvest_teardown_root_dir_does_not_exist.md")
+        echo(msg)
+        raise Exit(1)
+
+    # de-materialize the tree
+    materializer = Materializer()
+    materializer.dematerialize_tree(tree, base_path, dry_run)
+    echo(f"Removed: {base_path / tree.root.name}")

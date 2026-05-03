@@ -182,12 +182,93 @@ def test_scaffold_dry_run(
     assert all(str(tmp_path / path) in result.stdout for path in tree.paths)
 
 
+# --- treebuild harvest teardown ---
+def test_teardown_defaults(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """Call `treebuild harvest teardown` (perform roundtrip by creating directories first)"""
+    # invoke CLI
+    path_strs = ["some.file", "first-folder/file", "second-folder/"]
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    runner.invoke(app, ["grow"] + path_strs)
+    runner.invoke(app, ["seed", "project-name"])
+    runner.invoke(app, ["harvest", "scaffold", "--location", str(tmp_path)])
+    result = runner.invoke(app, ["harvest", "teardown", "--location", str(tmp_path)])
+    assert result.exit_code == 0
+    assert result.stdout != ""
+
+    # manually build tree and check behavior
+    paths = [Path(p) for p in path_strs]
+    builder = TreeBuilder("project-name", paths)
+    tree = builder.assemble_tree()
+    assert not any((tmp_path / path).exists() for path in tree.paths)
+
+
+def test_teardown_dry_run(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """Call `treebuild harvest teardown --dry-run"""
+    # invoke CLI
+    path_strs = ["some.file", "first-folder/file", "second-folder/"]
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    runner.invoke(app, ["grow"] + path_strs)
+    runner.invoke(app, ["seed", "project-name"])
+    runner.invoke(app, ["harvest", "scaffold", "--location", str(tmp_path)])
+    result = runner.invoke(
+        app, ["harvest", "teardown", "--location", str(tmp_path), "--dry-run"]
+    )
+    assert result.exit_code == 0
+
+    # manually build tree and check behavior
+    paths = [Path(p) for p in path_strs]
+    builder = TreeBuilder("project-name", paths)
+    tree = builder.assemble_tree()
+    assert (tmp_path / tree.root.name).exists()
+    assert all(str(tmp_path / path) in result.stdout for path in tree.paths)
+
+
+def test_teardown_exists_if_no_root(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """Cannot dematerialize anything if root name unknown."""
+    # invoke CLI
+    path_strs = ["some.file", "first-folder/file", "second-folder/"]
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    runner.invoke(app, ["grow"] + path_strs)
+    runner.invoke(app, ["seed", "project-name"])
+    runner.invoke(app, ["harvest", "scaffold", "--location", str(tmp_path)])
+    runner.invoke(app, ["uproot"])
+    result = runner.invoke(app, ["harvest", "teardown", "--location", str(tmp_path)])
+    assert result.exit_code == 1
+    expected_msg = load_message("harvest_teardown_no_root_set.md")
+    assert expected_msg in result.stdout
+
+
+def test_teardown_exists_if_root_does_not_exist(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """Cannot dematerialize / remove anything if root directory is not found."""
+    path_strs = ["some.file", "first-folder/file", "second-folder/"]
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    runner.invoke(app, ["grow"] + path_strs)
+    runner.invoke(app, ["seed", "project-name"])
+    result = runner.invoke(app, ["harvest", "teardown", "--location", str(tmp_path)])
+    assert result.exit_code == 1
+    expected_msg = load_message("harvest_teardown_root_dir_does_not_exist.md")
+    assert expected_msg in result.stdout
+
+
 # --- ensure there is an active session (for else there is no tree to do anything with) ---
 @pytest.mark.parametrize(
     "command,arguments",
     [
         ("text", ["--renderer", "plain"]),
         ("scaffold", []),
+        ("teardown", []),
     ],
 )
 def test_harvest_group_needs_active_session(
