@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from treebuild.cli.entrypoint import app
@@ -58,7 +59,7 @@ def test_harvest_render_and_write_to_file(
     assert rendering == tmp_file.read_text()
 
 
-def test_harvest_exits_if_tree_is_empty(
+def test_harvest_text_exits_if_tree_is_empty(
     active_session: tuple[Path, dict[str, str]],
 ) -> None:
     """No leaves/branches or a root? Nothing to render."""
@@ -69,7 +70,7 @@ def test_harvest_exits_if_tree_is_empty(
     assert result.stdout != ""
 
 
-def test_harvest_show_root_ignored_if_no_root_name(
+def test_harvest_text_show_root_ignored_if_no_root_name(
     active_session: tuple[Path, dict[str, str]],
 ) -> None:
     """The --show-root flag should only have an affect if a root name is set for the given tree."""
@@ -93,12 +94,108 @@ def test_harvest_show_root_ignored_if_no_root_name(
     assert output_no_flag.strip() == output_with_flag.replace(expected_msg, "").strip()
 
 
-def test_harvest_needs_active_session(
-    empty_session: tuple[Path, dict[str, str]],
+# --- treebuild harvest scaffold ---
+def test_scaffold_defaults(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """Calling `treebuild harvest scaffold` without any additional options/flags."""
+    # invoke CLI
+    path_strs = ["some.file", "first-folder/file", "second-folder/"]
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    runner.invoke(app, ["grow"] + path_strs)
+    runner.invoke(app, ["seed", "project-name"])
+    result = runner.invoke(app, ["harvest", "scaffold", "--location", str(tmp_path)])
+    assert result.exit_code == 0
+    assert result.stdout != ""
+
+    # manually build tree and check behavior
+    paths = [Path(p) for p in path_strs]
+    builder = TreeBuilder("project-name", paths)
+    tree = builder.assemble_tree()
+    assert all((tmp_path / path).exists() for path in tree.paths)
+
+
+@pytest.mark.xfail(
+    reason="Trailing slashes not yet interpreted as indicating the path is a directory. See issue #1"
+)
+def test_scaffold_w_gitkeep(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """Calling `treebuild harvest scaffold --gitkeep`"""
+    # invoke CLI
+    path_strs = ["some.file", "first-folder/file", "second-folder/"]
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    runner.invoke(app, ["grow"] + path_strs)
+    runner.invoke(app, ["seed", "project-name"])
+    result = runner.invoke(
+        app, ["harvest", "scaffold", "--location", str(tmp_path), "--gitkeep"]
+    )
+    assert result.exit_code == 0
+    assert result.stdout != ""
+
+    # manually build tree and check behavior
+    paths = [Path(p) for p in path_strs]
+    builder = TreeBuilder("project-name", paths)
+    tree = builder.assemble_tree()
+    assert all((tmp_path / path).exists() for path in tree.paths)
+    assert (tmp_path / "second-folder" / ".gitkeep").exists()
+
+
+def test_scaffold_exists_if_no_root(
+    active_session: tuple[Path, dict[str, str]],
+    tmp_path: Path,
+) -> None:
+    """Cannot materialize anything, if root directory name is not set."""
+    path_strs = ["some.file", "first-folder/file", "second-folder/"]
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    runner.invoke(app, ["grow"] + path_strs)
+    result = runner.invoke(app, ["harvest", "scaffold", "--location", str(tmp_path)])
+    assert result.exit_code == 1
+
+    expected_msg = load_message("harvest_scaffold_no_root_set.md")
+    assert expected_msg in result.stdout
+
+
+def test_scaffold_dry_run(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """Calling `treebuild harvest scaffold --dry-run"""
+    # invoke CLI
+    path_strs = ["some.file", "first-folder/file", "second-folder/"]
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    runner.invoke(app, ["grow"] + path_strs)
+    runner.invoke(app, ["seed", "project-name"])
+    result = runner.invoke(
+        app, ["harvest", "scaffold", "--location", str(tmp_path), "--dry-run"]
+    )
+    assert result.exit_code == 0
+
+    # manually build tree and check behavior
+    paths = [Path(p) for p in path_strs]
+    builder = TreeBuilder("project-name", paths)
+    tree = builder.assemble_tree()
+    assert not (tmp_path / tree.root.name).exists()
+    assert all(str(tmp_path / path) in result.stdout for path in tree.paths)
+
+
+# --- ensure there is an active session (for else there is no tree to do anything with) ---
+@pytest.mark.parametrize(
+    "command,arguments",
+    [
+        ("text", ["--renderer", "plain"]),
+        ("scaffold", []),
+    ],
+)
+def test_harvest_group_needs_active_session(
+    empty_session: tuple[Path, dict[str, str]], command: str, arguments: list[str]
 ) -> None:
     """Cannot harvest without starting a tree."""
     _, environment = empty_session
     runner = CliRunner(env=environment)
-    result = runner.invoke(app, ["harvest", "text", "--renderer", "plain"])
+    result = runner.invoke(app, ["harvest"] + [command] + arguments)
     assert result.exit_code == 1
     assert result.stdout != ""

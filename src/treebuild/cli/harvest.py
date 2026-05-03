@@ -7,6 +7,7 @@ from typer import Exit, Option, Typer, echo
 
 from treebuild.cli.helpers import ensure_session_exists, load_message
 from treebuild.core.settings import get_settings
+from treebuild.harvest.materializer import Materializer
 from treebuild.harvest.render_factory import RenderMethod, get_renderer
 from treebuild.storage.session import SessionStore
 from treebuild.tree.builder import TreeBuilder
@@ -26,11 +27,11 @@ def text(
         ),
     ] = False,
     root: Annotated[
-        str,
+        str | None,
         Option(
-            help="Name of root directory. Will only be used if --show-root flag is used."
+            help="Name of root directory, if not set prior.  Will only be used if --show-root flag is used."
         ),
-    ] = ".",
+    ] = None,
     to_file: Annotated[
         Path | None,
         Option(
@@ -58,12 +59,15 @@ def text(
         echo(msg)
         raise Exit(1)
 
+    # read root from Session
+    root_name = root or session.read_root() or "."
+
     # Build the tree
     paths = [Path(entry) for entry in session.read_paths()]
-    builder = TreeBuilder(root_name=root, paths=paths)
+    builder = TreeBuilder(root_name=root_name, paths=paths)
     tree = builder.assemble_tree()
 
-    # Render to TXT
+    # Render to text
     rendering_method = method if method else settings.renderer
     renderer = get_renderer(rendering_method)
 
@@ -82,10 +86,54 @@ def text(
 
 
 @harvest_app.command()
-def scaffold() -> None:
+def scaffold(
+    location: Annotated[
+        Path | None, Option("--location", "-l", help="Where to place the root.")
+    ] = None,
+    gitkeep: Annotated[
+        bool,
+        Option(
+            "--gitkeep",
+            help="Adds dummy `.gitkeep` files into empty directories, such that git includes them.",
+        ),
+    ] = False,
+    root: Annotated[
+        str | None, Option(help="Name of root directory, if not set prior.")
+    ] = None,
+    dry_run: Annotated[
+        bool,
+        Option(
+            "--dry-run", help="Only print which files and directories would be created."
+        ),
+    ] = False,
+) -> None:
     """
     Create the files and directories.
     """
+    # Check if file for session exists:
+    settings = get_settings()
+    session_file = settings.session_file
+    ensure_session_exists(session_file)
+    session = SessionStore(session_file)
+
+    # check name of root directory is set:
+    # NOTE: The 'walrus operator' (:=) will automatically assign the value to `root_name`, which will persist if we exit this clause (and thus did not raise Exit(1))
+    if not (root_name := (root or session.read_root())):
+        msg = load_message("harvest_scaffold_no_root_set.md")
+        echo(msg)
+        raise Exit(1)
+
+    # Build the tree
+    paths = [Path(entry) for entry in session.read_paths()]
+    builder = TreeBuilder(root_name=root_name, paths=paths)
+    tree = builder.assemble_tree()
+
+    # materialize the tree
+    # TODO: use settings here to get base path as fallback.
+    base_path = location or Path.cwd()
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path, gitkeep, dry_run)
+    echo(f"Created: {base_path / tree.root.name}")
 
 
 @harvest_app.command()
