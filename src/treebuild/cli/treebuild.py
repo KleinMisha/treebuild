@@ -1,5 +1,6 @@
 """Primary commands, which will be called as 'treebuild <COMMAND> <ARGS> <OPTIONS>'"""
 
+import logging
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -8,7 +9,7 @@ from typer import Argument, Exit, Option, Typer, echo
 from treebuild.cli.helpers import ensure_session_exists, load_message
 from treebuild.core.exceptions import DuplicatePathError
 from treebuild.core.settings import get_settings
-from treebuild.rendering.factory import RenderMethod, get_renderer
+from treebuild.harvest.render_factory import RenderMethod, get_renderer
 from treebuild.storage.session import SessionStore, normalize
 from treebuild.tree.builder import TreeBuilder
 
@@ -110,21 +111,23 @@ def plant(
     if not session_file.exists():
         session_file.parent.mkdir(parents=True, exist_ok=True)
         session_file.touch()
-        echo(f"Created new file to store paths added to your tree: {session_file}")
-        # ? Support using a different file?
-        # echo("To change the file use `treebuild config set session-file <path>`")
+        logging.info(
+            f"Created new file to store paths added to your tree: {session_file}"
+        )
 
     session = SessionStore(session_file)
     if session.has_paths() or session.has_root():
-        echo("Another tree is already in progress.\n")
-        echo("Check out it's status using `treebuild status`\n")
-        echo("Start over? `treebuild replant`\n")
+        logging.error(
+            "Another tree is already in progress.\n"
+            "Check out it's status using `treebuild status`\n"
+            "Start over? `treebuild replant`"
+        )
         raise Exit(1)
 
     if root:
         session = SessionStore(session_file)
         session.write_root(root)
-        echo(f"Written tree root: {root}")
+        logging.info(f"Written tree root: {root}")
 
 
 @app.command()
@@ -144,9 +147,9 @@ def grow(
     for p in paths:
         try:
             session.write_path(p)
-            echo(f"Path added: {p}")
+            logging.info(f"Path added: {p}")
         except DuplicatePathError:
-            echo(f"Skipping duplicate path: {p}")
+            logging.warning(f"Skipping duplicate path: {p}")
 
 
 @app.command()
@@ -162,7 +165,7 @@ def prune(
     """Remove (a) path(s) to the current session's tree."""
 
     if not (paths or remove_all):
-        echo(
+        logging.error(
             "Please enter paths to remove or use the `--all` flag to indicate all paths should be removed.\n"
             "Try it again!"
         )
@@ -178,22 +181,22 @@ def prune(
     session = SessionStore(file_path=session_file)
 
     if not session.has_paths():
-        echo("No paths to remove.")
+        logging.error("No paths to remove.")
         raise Exit(1)
 
     if remove_all:
         _paths = session.read_paths()
         session.remove_all_paths()
-        echo(f"Removed all paths: {_paths}")
+        logging.info(f"Removed all paths: {_paths}")
         raise Exit(0)
 
     _paths = paths or []
     for p in _paths:
         if normalize(p) in session.read_paths():
             session.remove_path(p)
-            echo(f"Path removed: {p}")
+            logging.info(f"Path removed: {p}")
         else:
-            echo(f"Skipping, path not found: {p}")
+            logging.warning(f"Skipping, path not found: {p}")
 
 
 @app.command()
@@ -206,7 +209,7 @@ def seed(
     ensure_session_exists(session_file)
     session = SessionStore(file_path=session_file)
     session.write_root(root_name)
-    echo(f"Root set: {root_name}")
+    logging.info(f"Root set: {root_name}")
 
 
 @app.command()
@@ -218,12 +221,12 @@ def uproot() -> None:
     session = SessionStore(session_file)
 
     if not session.has_root():
-        echo("No root to remove")
+        logging.error("No root to remove")
         raise Exit(1)
 
     root_name = session.read_root()
     session.remove_root()
-    echo(f"Removed root: {root_name}")
+    logging.info(f"Removed root: {root_name}")
 
 
 @app.command()
@@ -242,7 +245,7 @@ def replant() -> None:
     ensure_session_exists(session_file)
     session = SessionStore(file_path=session_file)
     session.clear_file()
-    echo(f"Reset file: {session_file}")
+    logging.info(f"Reset file: {session_file}")
 
 
 @app.command()
@@ -253,4 +256,4 @@ def chop() -> None:
     ensure_session_exists(session_file)
     session = SessionStore(file_path=session_file)
     session.delete_file()
-    echo(f"Deleted file: {session_file}")
+    logging.info(f"Deleted file: {session_file}")

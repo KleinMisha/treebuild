@@ -1,10 +1,10 @@
-"""Unit tests for src/treebuild/rendering/renderer.py"""
+"""Unit tests for src/treebuild/creation/renderer.py"""
 
 from unittest.mock import Mock
 
 import pytest
 
-from treebuild.rendering.renderer import Branch, Connector, Renderer, Tree
+from treebuild.harvest.renderer import Branch, Connector, Renderer, Tree
 
 
 class MockRenderer(Renderer):

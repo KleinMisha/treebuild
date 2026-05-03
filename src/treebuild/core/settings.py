@@ -9,7 +9,7 @@ from pydantic_settings import (
     TomlConfigSettingsSource,
 )
 
-from treebuild.rendering.factory import RenderMethod
+from treebuild.harvest.render_factory import RenderMethod
 
 # DEFAULTS TO FALL BACK TO:
 DEFAULT_SESSION_FILE = Path().home() / ".config" / "treebuild" / "session_tree.txt"

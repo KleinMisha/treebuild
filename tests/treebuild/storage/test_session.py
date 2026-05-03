@@ -73,7 +73,7 @@ def test_removing_all_paths(session_file: Path) -> None:
 def test_cannot_write_duplicate(session_file: Path, duplicate: str) -> None:
     """Attempting to write a duplicate path should raise an exception."""
     session = SessionStore(session_file)
-    session.write_path("/first/path/")
+    session.write_path("/first/path")
     with pytest.raises(DuplicatePathError):
         session.write_path(duplicate)
 
@@ -81,7 +81,7 @@ def test_cannot_write_duplicate(session_file: Path, duplicate: str) -> None:
 def test_duplicate_first_normalizes_entry(session_file: Path) -> None:
     """Attempt to write the same path, but the second time you omit the trailing slash."""
     session = SessionStore(session_file)
-    session.write_path("/first/path/")
+    session.write_path("/first/path")
     with pytest.raises(DuplicatePathError):
         session.write_path("/first/path")
 
@@ -189,3 +189,18 @@ def test_write_and_clear(session_file: Path) -> None:
     session.write_root("root")
     session.clear_file()
     assert (not session.has_paths()) and (not session.has_root())
+
+
+def test_normalization_preserves_trailing_slash(session_file: Path) -> None:
+    """Entering a path as `folder/` should be interpreted as a directory, so session should preserve this trailing slash."""
+    session = SessionStore(session_file)
+    session.write_path("/path/to/dir/")
+    assert "path/to/dir/" in session.read_paths()
+
+
+def test_trailing_slash_not_counted_as_duplicate(session_file: Path) -> None:
+    """some/path/ and some/path should be treated differently"""
+    session = SessionStore(session_file)
+    session.write_path("/some/path/")
+    session.write_path("/some/path")
+    assert len(session.read_paths()) == 2

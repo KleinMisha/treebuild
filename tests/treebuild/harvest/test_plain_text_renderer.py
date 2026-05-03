@@ -1,7 +1,7 @@
-"""Unit tests for src/treebuild/rendering/plain_text_renderer.py"""
+"""Unit tests for src/treebuild/creation/plain_text_renderer.py"""
 
 from tests.conftest import assert_strings_equal
-from treebuild.rendering.plain_text_renderer import PlainTextRenderer
+from treebuild.harvest.plain_text_renderer import PlainTextRenderer
 from treebuild.tree.branches import Branch, Tree
 
 
