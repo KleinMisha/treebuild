@@ -47,9 +47,8 @@ def demo() -> None:
     for path in path_names:
         session.write_path(path)
 
-    # harvest:
-    paths = [Path(entry) for entry in session.read_paths()]
-    builder = TreeBuilder(root_name=root_name, paths=paths)
+    # harvest text:
+    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
     tree = builder.assemble_tree()
     renderer = get_renderer(RenderMethod.PLAIN)
     rendering = renderer.render_tree(tree, include_root=True)

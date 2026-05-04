@@ -63,8 +63,7 @@ def text(
     root_name = root or session.read_root() or "."
 
     # Build the tree
-    paths = [Path(entry) for entry in session.read_paths()]
-    builder = TreeBuilder(root_name=root_name, paths=paths)
+    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
     tree = builder.assemble_tree()
 
     # Render to text
@@ -116,14 +115,13 @@ def scaffold(
 
     # check name of root directory is set:
     # NOTE: The 'walrus operator' (:=) will automatically assign the value to `root_name`, which will persist if we exit this clause (and thus did not raise Exit(1))
-    if not (root_name := session.read_root() or None):
+    if not (root_name := session.read_root()):
         msg = load_message("harvest_scaffold_no_root_set.md")
         echo(msg)
         raise Exit(1)
 
     # Build the tree
-    paths = [Path(entry) for entry in session.read_paths()]
-    builder = TreeBuilder(root_name=root_name, paths=paths)
+    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
     tree = builder.assemble_tree()
 
     # materialize the tree
@@ -131,7 +129,8 @@ def scaffold(
     base_path = location or Path.cwd()
     materializer = Materializer()
     materializer.materialize_tree(tree, base_path, gitkeep, dry_run)
-    echo(f"Created: {base_path / tree.root.name}")
+    if not dry_run:
+        echo(f"Created: {base_path / tree.root.name}")
 
 
 @harvest_app.command()
@@ -158,12 +157,11 @@ def teardown(
     session = SessionStore(session_file)
 
     # Build the tree
-    paths = [Path(entry) for entry in session.read_paths()]
     if not (root_name := session.read_root() or None):
         msg = load_message("harvest_teardown_no_root_set.md")
         echo(msg)
         raise Exit(1)
-    builder = TreeBuilder(root_name=root_name, paths=paths)
+    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
     tree = builder.assemble_tree()
 
     # check if root directory exists
