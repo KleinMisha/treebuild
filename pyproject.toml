@@ -20,6 +20,13 @@ testpaths = ["tests"]
 source = ["src"]
 omit = ["tests/*", "*/__init__.py"]
 
+[tool.coverage.report]
+exclude_lines = [
+    "if __name__ == .__main__.:",
+]
+
+
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
