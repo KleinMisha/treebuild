@@ -60,6 +60,4 @@ class Renderer(ABC):
         return lines
 
     @abstractmethod
-    def _format_line(self, name: str, ancestor_is_last: list[bool]) -> str:
-        """Rendering a single line is implementation dependent"""
-        ...
+    def _format_line(self, name: str, ancestor_is_last: list[bool]) -> str: ...
