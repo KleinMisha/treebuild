@@ -3,7 +3,7 @@
 treebuild is a CLI tool for **sketching repository structures** before you build them.
 Design your tree, then copy-paste it into a README, a prompt, or your notes.
 
----****
+---
 
 ## Quick demo
 
@@ -36,19 +36,9 @@ Shows the current root and all paths added so far.
 ### 4. Harvest the tree
 
 ```bash
-treebuild harvest
+treebuild harvest text
 ```
 
 Renders your tree to the terminal:
 
-```bash
-myproject
-├── first_folder
-│   └── file.py
-├── second_folder
-│   ├── another_file.json
-│   └── yet_another.file
-├── .dotfile
-├── README.md
-└── empty_folder
-```
+
