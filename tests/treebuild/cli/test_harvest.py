@@ -12,37 +12,37 @@ from treebuild.tree.builder import TreeBuilder
 
 
 ## --- treebuild harvest text---
-def test_harvest_plain_text_renderer(
+def test_plain_text_renderer(
     active_session: tuple[Path, dict[str, str]],
 ) -> None:
     """Render to plain text."""
+    path_strs = ["some.file", "a/folder/with/some/file.inside"]
     _, environment = active_session
     runner = CliRunner(env=environment)
-    runner.invoke(app, ["grow", "some.file", "a/folder/with/some/file.inside"])
+    runner.invoke(app, ["grow"] + path_strs)
     runner.invoke(app, ["seed", "project-name"])
     result = runner.invoke(app, ["harvest", "text", "--renderer", "plain"])
     assert result.exit_code == 0
     assert result.stdout != ""
 
     # Manually create rendering and check if contents is send to stdout
-    paths = [Path(p) for p in ["some.file", "a/folder/with/some/file.inside"]]
-    builder = TreeBuilder("project-name", paths)
+    builder = TreeBuilder("project-name", path_strs)
     tree = builder.assemble_tree()
     renderer = PlainTextRenderer()
     rendering = renderer.render_tree(tree)
     assert rendering in result.stdout
 
 
-def test_harvest_render_and_write_to_file(
+def test_text_render_and_write_to_file(
     active_session: tuple[Path, dict[str, str]],
     tmp_path: Path,
 ) -> None:
     """write contents to a file."""
-
+    path_strs = ["some.file", "a/folder/with/some/file.inside"]
     tmp_file = tmp_path / "rendering.md"
     _, environment = active_session
     runner = CliRunner(env=environment)
-    runner.invoke(app, ["grow", "some.file", "a/folder/with/some/file.inside"])
+    runner.invoke(app, ["grow"] + path_strs)
     runner.invoke(app, ["seed", "project-name"])
     result = runner.invoke(
         app, ["harvest", "text", "--renderer", "plain", "--output", str(tmp_file)]
@@ -51,15 +51,14 @@ def test_harvest_render_and_write_to_file(
     assert str(tmp_file) in result.stdout
 
     # Manually create rendering and check if contents is written to file.
-    paths = [Path(p) for p in ["some.file", "a/folder/with/some/file.inside"]]
-    builder = TreeBuilder("project-name", paths)
+    builder = TreeBuilder("project-name", path_strs)
     tree = builder.assemble_tree()
     renderer = PlainTextRenderer()
     rendering = renderer.render_tree(tree)
     assert rendering == tmp_file.read_text()
 
 
-def test_harvest_text_exits_if_tree_is_empty(
+def test_text_exits_if_tree_is_empty(
     active_session: tuple[Path, dict[str, str]],
 ) -> None:
     """No leaves/branches or a root? Nothing to render."""
@@ -70,7 +69,7 @@ def test_harvest_text_exits_if_tree_is_empty(
     assert result.stdout != ""
 
 
-def test_harvest_text_show_root_ignored_if_no_root_name(
+def test_text_show_root_ignored_if_no_root_name(
     active_session: tuple[Path, dict[str, str]],
 ) -> None:
     """The --show-root flag should only have an affect if a root name is set for the given tree."""
@@ -106,12 +105,12 @@ def test_scaffold_defaults(
     runner.invoke(app, ["grow"] + path_strs)
     runner.invoke(app, ["seed", "project-name"])
     result = runner.invoke(app, ["harvest", "scaffold", "--location", str(tmp_path)])
+
     assert result.exit_code == 0
     assert result.stdout != ""
 
     # manually build tree and check behavior
-    paths = [Path(p) for p in path_strs]
-    builder = TreeBuilder("project-name", paths)
+    builder = TreeBuilder("project-name", path_strs)
     tree = builder.assemble_tree()
     assert all((tmp_path / path).exists() for path in tree.paths)
 
@@ -136,8 +135,7 @@ def test_scaffold_w_gitkeep(
     assert result.stdout != ""
 
     # manually build tree and check behavior
-    paths = [Path(p) for p in path_strs]
-    builder = TreeBuilder("project-name", paths)
+    builder = TreeBuilder("project-name", path_strs)
     tree = builder.assemble_tree()
     assert all((tmp_path / path).exists() for path in tree.paths)
     assert (tmp_path / "second-folder" / ".gitkeep").exists()
@@ -175,8 +173,7 @@ def test_scaffold_dry_run(
     assert result.exit_code == 0
 
     # manually build tree and check behavior
-    paths = [Path(p) for p in path_strs]
-    builder = TreeBuilder("project-name", paths)
+    builder = TreeBuilder("project-name", path_strs)
     tree = builder.assemble_tree()
     assert not (tmp_path / tree.root.name).exists()
     assert all(str(tmp_path / path) in result.stdout for path in tree.paths)
@@ -199,8 +196,7 @@ def test_teardown_defaults(
     assert result.stdout != ""
 
     # manually build tree and check behavior
-    paths = [Path(p) for p in path_strs]
-    builder = TreeBuilder("project-name", paths)
+    builder = TreeBuilder("project-name", path_strs)
     tree = builder.assemble_tree()
     assert not any((tmp_path / path).exists() for path in tree.paths)
 
@@ -222,8 +218,7 @@ def test_teardown_dry_run(
     assert result.exit_code == 0
 
     # manually build tree and check behavior
-    paths = [Path(p) for p in path_strs]
-    builder = TreeBuilder("project-name", paths)
+    builder = TreeBuilder("project-name", path_strs)
     tree = builder.assemble_tree()
     assert (tmp_path / tree.root.name).exists()
     assert all(str(tmp_path / path) in result.stdout for path in tree.paths)
