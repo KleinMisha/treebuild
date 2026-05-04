@@ -115,9 +115,6 @@ def test_scaffold_defaults(
     assert all((tmp_path / path).exists() for path in tree.paths)
 
 
-@pytest.mark.xfail(
-    reason="Trailing slashes not yet interpreted as indicating the path is a directory. See issue #1"
-)
 def test_scaffold_w_gitkeep(
     active_session: tuple[Path, dict[str, str]], tmp_path: Path
 ) -> None:
@@ -138,7 +135,7 @@ def test_scaffold_w_gitkeep(
     builder = TreeBuilder("project-name", path_strs)
     tree = builder.assemble_tree()
     assert all((tmp_path / path).exists() for path in tree.paths)
-    assert (tmp_path / "second-folder" / ".gitkeep").exists()
+    assert (tmp_path / tree.root.name / "second-folder" / ".gitkeep").exists()
 
 
 def test_scaffold_exists_if_no_root(
