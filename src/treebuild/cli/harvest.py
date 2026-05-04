@@ -168,7 +168,7 @@ def teardown(
     base_path = location or Path.cwd()
     if not (base_path / tree.root.name).exists():
         msg = load_message("harvest_teardown_root_dir_does_not_exist.md")
-        echo(msg)
+        echo(msg.format(root_dir=str(base_path / tree.root.name)))
         raise Exit(1)
 
     # de-materialize the tree

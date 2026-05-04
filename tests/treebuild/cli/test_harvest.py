@@ -11,6 +11,11 @@ from treebuild.harvest.plain_text_renderer import PlainTextRenderer
 from treebuild.tree.builder import TreeBuilder
 
 
+def static_part(message: str) -> str:
+    """Get the part of the message before the first {placeholder}"""
+    return message.split("{")[0].strip()
+
+
 ## --- treebuild harvest text---
 def test_plain_text_renderer(
     active_session: tuple[Path, dict[str, str]],
@@ -251,7 +256,7 @@ def test_teardown_exists_if_root_does_not_exist(
     result = runner.invoke(app, ["harvest", "teardown", "--location", str(tmp_path)])
     assert result.exit_code == 1
     expected_msg = load_message("harvest_teardown_root_dir_does_not_exist.md")
-    assert expected_msg in result.stdout
+    assert static_part(expected_msg) in result.stdout
 
 
 # --- ensure there is an active session (for else there is no tree to do anything with) ---
