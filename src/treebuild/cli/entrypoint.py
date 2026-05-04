@@ -11,7 +11,11 @@ from treebuild.core.logging import setup_logging
 # Tool will call this `app()` instance
 app = Typer()
 app.add_typer(main_app)
-app.add_typer(harvest_app, name="harvest")
+app.add_typer(
+    harvest_app,
+    name="harvest",
+    help="Use your tree to render text or scaffold on filesystem. ",
+)
 
 
 @app.callback()
