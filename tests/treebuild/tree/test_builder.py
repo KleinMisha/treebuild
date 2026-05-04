@@ -1,7 +1,5 @@
 """Unit tests for src/treebuilder/tree/builder.py"""
 
-from pathlib import Path
-
 from treebuild.tree.builder import Branch, Tree, TreeBuilder
 
 
@@ -23,8 +21,7 @@ def test_assemble_tree_only_files_in_root() -> None:
     expected_tree = Tree(root)
 
     # Use builder
-    files = [Path(f) for f in filenames]
-    builder = TreeBuilder("root", files)
+    builder = TreeBuilder("root", filenames)
     tree = builder.assemble_tree()
     assert tree == expected_tree
 
@@ -43,7 +40,7 @@ def test_assemble_tree_w_single_subdir_under_root() -> None:
     expected_tree = Tree(root)
 
     # Use builder
-    paths = [Path(f"root/folder/{f}") for f in filenames]
+    paths = [f"root/folder/{f}" for f in filenames]
     builder = TreeBuilder("root", paths)
     tree = builder.assemble_tree()
     assert tree == expected_tree
@@ -70,8 +67,8 @@ def test_assemble_tree_multiple_subdirs_at_same_level() -> None:
     expected_tree = Tree(root)
 
     # Use builder
-    paths = [Path(f"root/folder1/{f}") for f in files_in_first_folder] + [
-        Path(f"root/folder2/{f}") for f in files_in_second_folder
+    paths = [f"root/folder1/{f}" for f in files_in_first_folder] + [
+        f"root/folder2/{f}" for f in files_in_second_folder
     ]
     builder = TreeBuilder("root", paths)
     tree = builder.assemble_tree()
@@ -95,10 +92,28 @@ def test_assemble_tree_nested_subdirs() -> None:
     expected_tree = Tree(root)
 
     # Use builder
-    paths = [Path(f"root/folder1/folder2/{f}") for f in files_in_second_folder]
+    paths = [f"root/folder1/folder2/{f}" for f in files_in_second_folder]
     builder = TreeBuilder("root", paths)
     tree = builder.assemble_tree()
     assert tree == expected_tree
+
+
+def test_assemble_tree_w_empty_directory() -> None:
+    """Use a trailing slash to mark a path as a directory name, not a file name."""
+    # Manually construct the expected outcome
+    root = Branch("root")
+    empty_dir = Branch("empty-dir")
+    root.add_child_branch(empty_dir)
+    expected_tree = Tree(root)
+
+    builder = TreeBuilder("root", ["empty-dir/"])
+    tree = builder.assemble_tree()
+
+    assert tree == expected_tree
+    assert len(tree.root.branches) == 1
+    assert len(tree.root.leaves) == 0
+    assert tree.root.branches[0].name == "empty-dir"
+    assert tree.root.branches[0].is_empty
 
 
 def test_assemble_tree_mixed_leaves_and_branches() -> None:
@@ -109,7 +124,7 @@ def test_assemble_tree_mixed_leaves_and_branches() -> None:
     root = Branch("root")
     root.add_leaf("file_in_root_dir.txt")
     first_folder = Branch("first_folder")
-    files_in_first_folder = ["first_file.py", "second_file.css", "empty_directory"]
+    files_in_first_folder = ["first_file.py", "second_file.css"]
     for f in sorted(files_in_first_folder):
         first_folder.add_leaf(f)
 
@@ -118,7 +133,10 @@ def test_assemble_tree_mixed_leaves_and_branches() -> None:
     for f in sorted(files_in_second_directory):
         second_folder.add_leaf(f)
 
+    third_folder = Branch("empty_folder")
+
     root.add_child_branch(first_folder)
+    first_folder.add_child_branch(third_folder)
     first_folder.add_child_branch(second_folder)
     expected_tree = Tree(root)
 
@@ -126,9 +144,9 @@ def test_assemble_tree_mixed_leaves_and_branches() -> None:
     filenames = (
         ["root/file_in_root_dir.txt"]
         + [f"root/first_folder/{f}" for f in files_in_first_folder]
+        + ["root/first_folder/empty_folder/"]
         + [f"root/first_folder/second_folder/{f}" for f in files_in_second_directory]
     )
-    paths = [Path(f) for f in filenames]
-    builder = TreeBuilder("root", paths)
+    builder = TreeBuilder("root", filenames)
     tree = builder.assemble_tree()
     assert tree == expected_tree
