@@ -6,8 +6,13 @@ from typing import Annotated, Optional
 
 from typer import Argument, Exit, Option, Typer, echo
 
-from treebuild.cli.helpers import ensure_session_exists, load_message
-from treebuild.core.exceptions import DuplicatePathError
+from treebuild.cli.commands.treebuild import plant_impl
+from treebuild.cli.helpers import ensure_session_exists, load_message, raise_exit
+from treebuild.core.exceptions import (
+    DuplicatePathError,
+    SessionAlreadyExistsError,
+    with_error_handling,
+)
 from treebuild.core.settings import get_settings
 from treebuild.harvest.render_factory import RenderMethod, get_renderer
 from treebuild.storage.session import SessionStore, normalize
@@ -98,35 +103,14 @@ def status() -> None:
 
 
 @app.command()
+@with_error_handling(handlers={SessionAlreadyExistsError: raise_exit})
 def plant(
     root: Annotated[
         str | None, Option(help="Name of root directory for your tree.")
     ] = None,
 ) -> None:
     """Start defining a new tree"""
-
-    settings = get_settings()
-    session_file = settings.session_file
-    if not session_file.exists():
-        session_file.parent.mkdir(parents=True, exist_ok=True)
-        session_file.touch()
-        logging.info(
-            f"Created new file to store paths added to your tree: {session_file}"
-        )
-
-    session = SessionStore(session_file)
-    if session.has_paths() or session.has_root():
-        logging.error(
-            "Another tree is already in progress.\n"
-            "Check out it's status using `treebuild status`\n"
-            "Start over? `treebuild replant`"
-        )
-        raise Exit(1)
-
-    if root:
-        session = SessionStore(session_file)
-        session.write_root(root)
-        logging.info(f"Written tree root: {root}")
+    plant_impl(root)
 
 
 @app.command()
