@@ -6,10 +6,10 @@ from typing import Annotated, Optional
 
 from typer import Argument, Exit, Option, Typer, echo
 
-from treebuild.cli.commands.treebuild import plant_impl
+from treebuild.cli.commands.treebuild import grow_impl, plant_impl
 from treebuild.cli.helpers import ensure_session_exists, load_message
 from treebuild.core.exceptions import (
-    DuplicatePathError,
+    EmptySessionError,
     SessionAlreadyExistsError,
 )
 from treebuild.core.settings import get_settings
@@ -121,21 +121,12 @@ def grow(
     paths: list[str] = Argument(help="Paths to be added as nodes to the tree."),
 ) -> None:
     """Add (a) path(s) to the current session's tree."""
-
-    settings = get_settings()
-    session_file = settings.session_file
-
-    # Error path: Redirect user to command to call first
-    ensure_session_exists(session_file)
-
-    # Happy path: write into file
-    session = SessionStore(file_path=session_file)
-    for p in paths:
-        try:
-            session.write_path(p)
-            logging.info(f"Path added: {p}")
-        except DuplicatePathError:
-            logging.warning(f"Skipping duplicate path: {p}")
+    try:
+        grow_impl(paths)
+        raise Exit(code=0)
+    except EmptySessionError as e:
+        logging.error(f"{type(e).__name__}:{str(e)}")
+        raise Exit(code=1)
 
 
 @app.command()
