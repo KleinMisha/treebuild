@@ -6,7 +6,7 @@ from typing import Annotated
 
 from typer import Exit, Option, Typer, echo
 
-from treebuild.cli.commands.harvest import render_txt_impl
+from treebuild.cli.commands.harvest import render_txt_impl, scaffold_impl
 from treebuild.cli.helpers import ensure_session_exists, load_message
 from treebuild.core.exceptions import EmptySessionError, NoRootSetError
 from treebuild.core.settings import get_settings
@@ -79,30 +79,21 @@ def scaffold(
     """
     Create the files and directories.
     """
-    # Check if file for session exists:
-    settings = get_settings()
-    session_file = settings.session_file
-    ensure_session_exists(session_file)
-    session = SessionStore(session_file)
-
-    # check name of root directory is set:
-    # NOTE: The 'walrus operator' (:=) will automatically assign the value to `root_name`, which will persist if we exit this clause (and thus did not raise Exit(1))
-    if not (root_name := session.read_root()):
-        msg = load_message("harvest_scaffold_no_root_set.md")
-        echo(msg)
-        raise Exit(1)
-
-    # Build the tree
-    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
-    tree = builder.assemble_tree()
-
-    # materialize the tree
-    # TODO: use settings here to get base path as fallback.
-    base_path = location or Path.cwd()
-    materializer = Materializer()
-    materializer.materialize_tree(tree, base_path, gitkeep, dry_run)
-    if not dry_run:
-        echo(f"Created: {base_path / tree.root.name}")
+    try:
+        scaffold_impl(location, gitkeep, dry_run)
+        if not dry_run:
+            base_path = location or Path.cwd()
+            settings = get_settings()
+            session_file = settings.session_file
+            session = SessionStore(session_file)
+            root_name = session.read_root()
+            # just to satisfy type-checker. Logically, this is condition guaranteed to be met as we did not raise NoRootSetError
+            assert root_name is not None
+            echo(f"Created: {base_path / root_name}")
+        raise Exit(code=0)
+    except (EmptySessionError, NoRootSetError) as e:
+        logging.error(f"{type(e).__name__}:{str(e)}")
+        raise Exit(code=1)
 
 
 @harvest_app.command()

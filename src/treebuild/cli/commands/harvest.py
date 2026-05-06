@@ -1,5 +1,6 @@
 """Implementation of secondary commands, which will be called as 'treebuild harvest <COMMAND> <ARGS> <OPTIONS>'"""
 
+from pathlib import Path
 from typing import Optional
 
 from treebuild.cli.helpers import load_message
@@ -8,6 +9,7 @@ from treebuild.core.settings import get_settings
 from treebuild.harvest.render_factory import RenderMethod, get_renderer
 from treebuild.storage.session import SessionStore
 from treebuild.tree.builder import TreeBuilder
+from treebuild.harvest.materializer import Materializer
 
 NO_SESSION_MSG = load_message("status_no_tree.md")
 
@@ -55,3 +57,36 @@ def render_txt_impl(
     renderer = get_renderer(rendering_method)
     rendering = renderer.render_tree(tree, include_root=show_root)
     return rendering
+
+
+def scaffold_impl(
+    location: Optional[Path] = None,
+    gitkeep: bool = False,
+    dry_run: bool = False,
+) -> None:
+    """
+    Create the files and directories.
+    """
+    # Check if file for session exists:
+    settings = get_settings()
+    session_file = settings.session_file
+    if not session_file.exists():
+        raise EmptySessionError(NO_SESSION_MSG)
+
+    session = SessionStore(session_file)
+
+    # check name of root directory is set:
+    root_name = session.read_root()
+    if not root_name:
+        msg = load_message("harvest_scaffold_no_root_set.md")
+        raise NoRootSetError(msg)
+
+    # Build the tree
+    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
+    tree = builder.assemble_tree()
+
+    # materialize the tree
+    # TODO: use settings here to get base path as fallback.
+    base_path = location or Path.cwd()
+    materializer = Materializer()
+    materializer.materialize_tree(tree, base_path, gitkeep, dry_run)
