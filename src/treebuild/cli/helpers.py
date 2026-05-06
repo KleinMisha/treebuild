@@ -1,11 +1,8 @@
 """Functions shared across CLI endpoints"""
 
-import logging
 from pathlib import Path
 
 from typer import Exit, echo
-
-from treebuild.core.exceptions import TreeBuildError
 
 # Where messages are stored.
 MESSAGES_DIR = Path(__file__).parent / "messages"
@@ -23,16 +20,3 @@ def ensure_session_exists(session_file: Path) -> None:
         msg = load_message("status_no_tree.md")
         echo(msg)
         raise Exit(code=1)
-
-
-# Exception Handlers:
-def raise_exit(exc: TreeBuildError) -> None:
-    """Handle fatal errors by logging message + exiting with status code 1."""
-    logging.error(f"{type(exc).__name__}: {str(exc)}")
-    raise Exit(code=1)
-
-
-def only_warn(exc: TreeBuildError) -> None:
-    """Log the error, do not raise Exit status"""
-    msg = f"{type(exc).__name__} : {str(exc)}"
-    logging.warning(msg)

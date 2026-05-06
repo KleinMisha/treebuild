@@ -4,7 +4,11 @@ import logging
 from typing import Optional
 
 from treebuild.cli.helpers import load_message
-from treebuild.core.exceptions import SessionAlreadyExistsError
+from treebuild.core.exceptions import (
+    DuplicatePathError,
+    EmptySessionError,
+    SessionAlreadyExistsError,
+)
 from treebuild.core.settings import get_settings
 from treebuild.storage.session import SessionStore
 
@@ -18,11 +22,13 @@ def plant_impl(root: Optional[str] = None) -> None:
 
     settings = get_settings()
     session_file = settings.session_file
+    # Error path: File already exists / tell user to double check.
     if session_file.exists():
         raise SessionAlreadyExistsError(
             "Another tree is already in progress.\n"
             "Check out it's status using `treebuild status`\n"
-            "Start over? `treebuild replant`"
+            "Start over? `treebuild replant` \n"
+            "Delete the file? `treebuild chop`"
         )
 
     session_file.parent.mkdir(parents=True, exist_ok=True)
@@ -33,3 +39,23 @@ def plant_impl(root: Optional[str] = None) -> None:
         session = SessionStore(session_file)
         session.write_root(root)
         logging.info(f"Written tree root: {root}")
+
+
+def grow_impl(paths: list[str]) -> None:
+    """Add (a) path(s) to the current session's tree."""
+
+    settings = get_settings()
+    session_file = settings.session_file
+
+    # Error path: Redirect user to command to call first
+    if not session_file.exists():
+        raise EmptySessionError(NO_SESSION_MSG)
+
+    # Happy path: write into file
+    session = SessionStore(file_path=session_file)
+    for p in paths:
+        try:
+            session.write_path(p)
+            logging.info(f"Path added: {p}")
+        except DuplicatePathError:
+            logging.warning(f"Skipping duplicate path: {p}")

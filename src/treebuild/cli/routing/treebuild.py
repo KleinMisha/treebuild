@@ -7,11 +7,10 @@ from typing import Annotated, Optional
 from typer import Argument, Exit, Option, Typer, echo
 
 from treebuild.cli.commands.treebuild import plant_impl
-from treebuild.cli.helpers import ensure_session_exists, load_message, raise_exit
+from treebuild.cli.helpers import ensure_session_exists, load_message
 from treebuild.core.exceptions import (
     DuplicatePathError,
     SessionAlreadyExistsError,
-    with_error_handling,
 )
 from treebuild.core.settings import get_settings
 from treebuild.harvest.render_factory import RenderMethod, get_renderer
@@ -103,14 +102,18 @@ def status() -> None:
 
 
 @app.command()
-@with_error_handling(handlers={SessionAlreadyExistsError: raise_exit})
 def plant(
     root: Annotated[
         str | None, Option(help="Name of root directory for your tree.")
     ] = None,
 ) -> None:
     """Start defining a new tree"""
-    plant_impl(root)
+    try:
+        plant_impl(root)
+        raise Exit(code=0)
+    except SessionAlreadyExistsError as e:
+        logging.error(f"{type(e).__name__}:{str(e)}")
+        raise Exit(code=1)
 
 
 @app.command()
