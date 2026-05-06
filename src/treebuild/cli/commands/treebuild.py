@@ -7,6 +7,8 @@ from treebuild.cli.helpers import load_message
 from treebuild.core.exceptions import (
     DuplicatePathError,
     EmptySessionError,
+    NoRootSetError,
+    RootAlreadySetError,
     SessionAlreadyExistsError,
 )
 from treebuild.core.settings import get_settings
@@ -89,3 +91,36 @@ def prune_impl(
             logging.info(f"Path removed: {p}")
         else:
             logging.warning(f"Skipping, path not found: {p}")
+
+
+def seed_impl(root_name: str, force: bool) -> None:
+    """Set root of the tree."""
+    settings = get_settings()
+    session_file = settings.session_file
+    if not session_file.exists():
+        raise EmptySessionError(NO_SESSION_MSG)
+
+    session = SessionStore(file_path=session_file)
+    if session.has_root() and not force:
+        raise RootAlreadySetError(
+            f"Your tree already has a root directory name set: {session.read_root()} \n"
+            f"To overwrite: `treebuild seed -f {root_name}"
+        )
+    session.write_root(root_name)
+    logging.info(f"Root set: {root_name}")
+
+
+def uproot_impl() -> None:
+    """Unset root name of tree."""
+    settings = get_settings()
+    session_file = settings.session_file
+    if not session_file.exists():
+        raise EmptySessionError(NO_SESSION_MSG)
+
+    session = SessionStore(session_file)
+    if not session.has_root():
+        raise NoRootSetError("No root to remove")
+
+    root_name = session.read_root()
+    session.remove_root()
+    logging.info(f"Removed root: {root_name}")

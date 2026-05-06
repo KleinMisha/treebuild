@@ -337,14 +337,29 @@ def test_seed(active_session: tuple[Path, dict[str, str]]) -> None:
     assert session.read_root() == root_name
 
 
-def test_rename_root(active_session: tuple[Path, dict[str, str]]) -> None:
-    """Call seed command twice to rename the root."""
+def test_exit_if_root_already_set(active_session: tuple[Path, dict[str, str]]) -> None:
+    """If '--force' flag not provided, the seed command will exit and inform the user in stead of silently overwriting."""
     before = "first-name"
     after = "new-name"
     file, environment = active_session
     runner = CliRunner(env=environment)
     runner.invoke(app, ["seed", before])
     result = runner.invoke(app, ["seed", after])
+    assert result.exit_code == 1
+    assert result.stdout != ""
+
+    session = SessionStore(file)
+    assert session.read_root() == before
+
+
+def test_force_rename_root(active_session: tuple[Path, dict[str, str]]) -> None:
+    """Adding the '--force' flag will silently overwrite the already existing root."""
+    before = "first-name"
+    after = "new-name"
+    file, environment = active_session
+    runner = CliRunner(env=environment)
+    runner.invoke(app, ["seed", before])
+    result = runner.invoke(app, ["seed", "-f", after])
     assert result.exit_code == 0
     assert result.stdout != ""
 

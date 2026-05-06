@@ -6,15 +6,21 @@ from typing import Annotated, Optional
 
 from typer import Argument, Exit, Option, Typer, echo
 
-from treebuild.cli.commands.treebuild import grow_impl, plant_impl, prune_impl
+from treebuild.cli.commands.treebuild import (
+    grow_impl,
+    plant_impl,
+    prune_impl,
+    seed_impl,
+)
 from treebuild.cli.helpers import ensure_session_exists, load_message
 from treebuild.core.exceptions import (
     EmptySessionError,
+    RootAlreadySetError,
     SessionAlreadyExistsError,
 )
 from treebuild.core.settings import get_settings
 from treebuild.harvest.render_factory import RenderMethod, get_renderer
-from treebuild.storage.session import SessionStore, normalize
+from treebuild.storage.session import SessionStore
 from treebuild.tree.builder import TreeBuilder
 
 app = Typer()
@@ -160,14 +166,17 @@ def prune(
 @app.command()
 def seed(
     root_name: Annotated[str, Argument(help="Name of the root directory.")],
+    force: Annotated[
+        bool, Option("--force", "-f", help="Overwrite existing root (if existing). ")
+    ] = False,
 ) -> None:
     """Set root of the tree."""
-    settings = get_settings()
-    session_file = settings.session_file
-    ensure_session_exists(session_file)
-    session = SessionStore(file_path=session_file)
-    session.write_root(root_name)
-    logging.info(f"Root set: {root_name}")
+    try:
+        seed_impl(root_name, force)
+        raise Exit(code=0)
+    except (EmptySessionError, RootAlreadySetError) as e:
+        logging.error(f"{type(e).__name__} : {str(e)}")
+        raise Exit(code=1)
 
 
 @app.command()
