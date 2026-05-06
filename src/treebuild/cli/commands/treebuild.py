@@ -124,3 +124,22 @@ def uproot_impl() -> None:
     root_name = session.read_root()
     session.remove_root()
     logging.info(f"Removed root: {root_name}")
+
+
+def replant_impl() -> None:
+    """
+    Keep the tree, but start from scratch with an empty file.
+
+    ---
+    Equivalent to (assuming you are using the same target file.)
+    1. `chop_impl`
+    followed by
+    2. `plant_impl`
+    """
+    settings = get_settings()
+    session_file = settings.session_file
+    if not session_file.exists():
+        raise EmptySessionError(NO_SESSION_MSG)
+    session = SessionStore(file_path=session_file)
+    session.clear_file()
+    logging.info(f"Reset file: {session_file}")

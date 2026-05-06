@@ -10,6 +10,7 @@ from treebuild.cli.commands.treebuild import (
     grow_impl,
     plant_impl,
     prune_impl,
+    replant_impl,
     seed_impl,
     uproot_impl,
 )
@@ -203,12 +204,12 @@ def replant() -> None:
     followed by
     2. `treebuild plant`
     """
-    settings = get_settings()
-    session_file = settings.session_file
-    ensure_session_exists(session_file)
-    session = SessionStore(file_path=session_file)
-    session.clear_file()
-    logging.info(f"Reset file: {session_file}")
+    try:
+        replant_impl()
+        raise Exit(code=0)
+    except EmptySessionError as e:
+        logging.error(f"{type(e).__name__} : {str(e)}")
+        raise Exit(code=1)
 
 
 @app.command()
