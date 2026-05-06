@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from treebuild.cli.helpers import load_message
+from treebuild.cli.helpers import NO_SESSION_MSG
 from treebuild.core.exceptions import (
     DuplicatePathError,
     EmptySessionError,
@@ -13,10 +13,6 @@ from treebuild.core.exceptions import (
 )
 from treebuild.core.settings import get_settings
 from treebuild.storage.session import SessionStore, normalize
-
-# TODO figure out what to do with this message --> basically want to do either a "no file at all" or "file found, but no paths/root"
-# TODO Status command for sure needs them individually, let's see ..
-NO_SESSION_MSG = load_message("status_no_tree.md")
 
 
 def plant_impl(root: Optional[str] = None) -> None:

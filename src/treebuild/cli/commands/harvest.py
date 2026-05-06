@@ -3,15 +3,17 @@
 from pathlib import Path
 from typing import Optional
 
-from treebuild.cli.helpers import load_message
-from treebuild.core.exceptions import EmptySessionError, NoRootSetError
+from treebuild.cli.helpers import NO_SESSION_MSG, load_message
+from treebuild.core.exceptions import (
+    EmptySessionError,
+    NoRootSetError,
+    RootDirNotFoundError,
+)
 from treebuild.core.settings import get_settings
+from treebuild.harvest.materializer import Materializer
 from treebuild.harvest.render_factory import RenderMethod, get_renderer
 from treebuild.storage.session import SessionStore
 from treebuild.tree.builder import TreeBuilder
-from treebuild.harvest.materializer import Materializer
-
-NO_SESSION_MSG = load_message("status_no_tree.md")
 
 
 def render_txt_impl(
@@ -90,3 +92,35 @@ def scaffold_impl(
     base_path = location or Path.cwd()
     materializer = Materializer()
     materializer.materialize_tree(tree, base_path, gitkeep, dry_run)
+
+
+def teardown_impl(location: Optional[Path] = None, dry_run: bool = False) -> None:
+    """
+    Remove the files and directories.
+    (undoes `treebuild harvest scaffold`)
+    """
+    # Check if file for session exists:
+    settings = get_settings()
+    session_file = settings.session_file
+    if not session_file.exists():
+        raise EmptySessionError(NO_SESSION_MSG)
+    session = SessionStore(session_file)
+
+    # Build the tree
+    root_name = session.read_root()
+    if not root_name:
+        msg = load_message("harvest_teardown_no_root_set.md")
+        raise NoRootSetError(msg)
+
+    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
+    tree = builder.assemble_tree()
+
+    # check if root directory exists
+    base_path = location or Path.cwd()
+    if not (base_path / tree.root.name).exists():
+        msg = load_message("harvest_teardown_root_dir_does_not_exist.md")
+        raise RootDirNotFoundError(msg.format(root_dir=str(base_path / tree.root.name)))
+
+    # de-materialize the tree
+    materializer = Materializer()
+    materializer.dematerialize_tree(tree, base_path, dry_run)
