@@ -11,10 +11,12 @@ from treebuild.cli.commands.treebuild import (
     plant_impl,
     prune_impl,
     seed_impl,
+    uproot_impl,
 )
 from treebuild.cli.helpers import ensure_session_exists, load_message
 from treebuild.core.exceptions import (
     EmptySessionError,
+    NoRootSetError,
     RootAlreadySetError,
     SessionAlreadyExistsError,
 )
@@ -182,18 +184,12 @@ def seed(
 @app.command()
 def uproot() -> None:
     """Unset root name of tree."""
-    settings = get_settings()
-    session_file = settings.session_file
-    ensure_session_exists(session_file)
-    session = SessionStore(session_file)
-
-    if not session.has_root():
-        logging.error("No root to remove")
-        raise Exit(1)
-
-    root_name = session.read_root()
-    session.remove_root()
-    logging.info(f"Removed root: {root_name}")
+    try:
+        uproot_impl()
+        raise Exit(code=0)
+    except (EmptySessionError, NoRootSetError) as e:
+        logging.error(f"{type(e).__name__} : {str(e)}")
+        raise Exit(code=1)
 
 
 @app.command()
