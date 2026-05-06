@@ -4,7 +4,7 @@ from typing import Annotated
 
 from typer import Option, Typer
 
-from treebuild.cli.harvest import harvest_app
+from treebuild.cli.routing.harvest import harvest_app
 from treebuild.cli.routing.treebuild import app as main_app
 from treebuild.core.logging import setup_logging
 

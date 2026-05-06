@@ -1,14 +1,17 @@
-"""Harvest the tree: Render to text / scaffold <--> create all files and directories."""
+"""Secondary group of commands, which will be called as 'treebuild <COMMAND> <ARGS> <OPTIONS>'"""
 
+import logging
 from pathlib import Path
 from typing import Annotated
 
 from typer import Exit, Option, Typer, echo
 
+from treebuild.cli.commands.harvest import render_txt_impl
 from treebuild.cli.helpers import ensure_session_exists, load_message
+from treebuild.core.exceptions import EmptySessionError, NoRootSetError
 from treebuild.core.settings import get_settings
 from treebuild.harvest.materializer import Materializer
-from treebuild.harvest.render_factory import RenderMethod, get_renderer
+from treebuild.harvest.render_factory import RenderMethod
 from treebuild.storage.session import SessionStore
 from treebuild.tree.builder import TreeBuilder
 
@@ -23,15 +26,10 @@ def text(
     show_root: Annotated[
         bool,
         Option(
-            "--show-root", help="If used will display the root name as the top node."
+            "--show-root",
+            help="If used will display the root name as the top node. NOTE: Requires a root name to be set for the current tree.",
         ),
     ] = False,
-    root: Annotated[
-        str | None,
-        Option(
-            help="Name of root directory, if not set prior.  Will only be used if --show-root flag is used."
-        ),
-    ] = None,
     to_file: Annotated[
         Path | None,
         Option(
@@ -46,42 +44,16 @@ def text(
     """
     Use tree to get output: Render tree to TXT
     """
-
-    # Check if file for session exists:
-    settings = get_settings()
-    session_file = settings.session_file
-    ensure_session_exists(session_file)
-
-    # Retrieve current tree's nodes
-    session = SessionStore(session_file)
-    if not (session.has_paths() or session.has_root()):
-        msg = load_message("status_empty_tree.md")
-        echo(msg)
-        raise Exit(1)
-
-    # read root from Session
-    root_name = root or session.read_root() or "."
-
-    # Build the tree
-    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
-    tree = builder.assemble_tree()
-
-    # Render to text
-    rendering_method = method if method else settings.renderer
-    renderer = get_renderer(rendering_method)
-
-    _show_root = show_root
-    if show_root and not session.has_root():
-        msg = load_message("harvest_show_root_no_name.md")
-        echo(msg)
-        _show_root = False
-
-    rendering = renderer.render_tree(tree, include_root=_show_root)
-    echo(rendering)
-
-    if to_file:
-        to_file.write_text(rendering)
-        echo(f"Written into file: {str(to_file)}")
+    try:
+        rendering = render_txt_impl(method, show_root)
+        echo(rendering)
+        if to_file:
+            to_file.write_text(rendering)
+            echo(f"Written into file: {str(to_file)}")
+        raise Exit(code=0)
+    except (EmptySessionError, NoRootSetError) as e:
+        logging.error(f"{type(e).__name__}:{str(e)}")
+        raise Exit(code=1)
 
 
 @harvest_app.command()

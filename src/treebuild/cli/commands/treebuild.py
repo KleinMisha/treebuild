@@ -1,4 +1,4 @@
-"""Implementation of primary command group"""
+"""Implementation of primary commands, which will be called as 'treebuild <COMMAND> <ARGS> <OPTIONS>'"""
 
 import logging
 from typing import Optional

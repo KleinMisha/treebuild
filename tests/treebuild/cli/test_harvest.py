@@ -74,28 +74,57 @@ def test_text_exits_if_tree_is_empty(
     assert result.stdout != ""
 
 
-def test_text_show_root_ignored_if_no_root_name(
+def test_text_show_root_in_rendering(
     active_session: tuple[Path, dict[str, str]],
 ) -> None:
-    """The --show-root flag should only have an affect if a root name is set for the given tree."""
+    """Use the --show-root flag to include it in the rendering"""
+    path_strs = ["some.file", "a/folder/with/some/file.inside"]
     _, environment = active_session
     runner = CliRunner(env=environment)
-    runner.invoke(app, ["grow", "some.file", "a/folder/with/some/file.inside"])
+    runner.invoke(app, ["grow"] + path_strs)
+    runner.invoke(app, ["seed", "project-name"])
+    result = runner.invoke(app, ["harvest", "text", "--show-root"])
+    assert result.exit_code == 0
 
-    result = runner.invoke(
-        app, ["harvest", "text", "--renderer", "plain", "--show-root"]
-    )
-    output_with_flag = result.stdout
+    # Manually create rendering and check if contents is send to stdout
+    builder = TreeBuilder("project-name", path_strs)
+    tree = builder.assemble_tree()
+    renderer = PlainTextRenderer()
+    rendering = renderer.render_tree(tree, include_root=True)
+    assert rendering in result.stdout
 
-    result = runner.invoke(app, ["harvest", "text", "--renderer", "plain"])
-    output_no_flag = result.stdout
 
-    # check additional message is shown:
-    expected_msg = load_message("harvest_show_root_no_name.md").strip()
-    assert expected_msg in output_with_flag
+def test_text_exits_if_show_root_wo_root_set(
+    active_session: tuple[Path, dict[str, str]],
+) -> None:
+    """Should raise exception / exit if user wants to display the root name, but there is no root name set."""
+    path_strs = ["some.file", "a/folder/with/some/file.inside"]
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    runner.invoke(app, ["grow"] + path_strs)
+    result = runner.invoke(app, ["harvest", "text", "--show-root"])
+    assert result.exit_code == 1
+    assert result.stdout != ""
 
-    # check only the 'tree' part
-    assert output_no_flag.strip() == output_with_flag.replace(expected_msg, "").strip()
+
+def test_text_does_not_care_if_root_set_if_no_flag(
+    active_session: tuple[Path, dict[str, str]],
+) -> None:
+    """If omitting the --show-root flag, silently ignore if root name was set prior."""
+    path_strs = ["some.file", "a/folder/with/some/file.inside"]
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    runner.invoke(app, ["grow"] + path_strs)
+    result = runner.invoke(app, ["harvest", "text"])
+    assert result.exit_code == 0
+    assert result.stdout != ""
+
+    # Manually create rendering and check if contents is send to stdout
+    builder = TreeBuilder("", path_strs)
+    tree = builder.assemble_tree()
+    renderer = PlainTextRenderer()
+    rendering = renderer.render_tree(tree, include_root=False)
+    assert rendering in result.stdout
 
 
 # --- treebuild harvest scaffold ---
