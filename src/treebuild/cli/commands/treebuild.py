@@ -143,3 +143,14 @@ def replant_impl() -> None:
     session = SessionStore(file_path=session_file)
     session.clear_file()
     logging.info(f"Reset file: {session_file}")
+
+
+def chop_impl() -> None:
+    """Delete the tree (including the file with session's data)."""
+    settings = get_settings()
+    session_file = settings.session_file
+    if not session_file.exists():
+        raise EmptySessionError(NO_SESSION_MSG)
+    session = SessionStore(file_path=session_file)
+    session.delete_file()
+    logging.info(f"Deleted file: {session_file}")

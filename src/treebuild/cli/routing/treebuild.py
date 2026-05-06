@@ -7,6 +7,7 @@ from typing import Annotated, Optional
 from typer import Argument, Exit, Option, Typer, echo
 
 from treebuild.cli.commands.treebuild import (
+    chop_impl,
     grow_impl,
     plant_impl,
     prune_impl,
@@ -14,7 +15,7 @@ from treebuild.cli.commands.treebuild import (
     seed_impl,
     uproot_impl,
 )
-from treebuild.cli.helpers import ensure_session_exists, load_message
+from treebuild.cli.helpers import load_message
 from treebuild.core.exceptions import (
     EmptySessionError,
     NoRootSetError,
@@ -215,9 +216,9 @@ def replant() -> None:
 @app.command()
 def chop() -> None:
     """Delete the tree (including the file with session's data)."""
-    settings = get_settings()
-    session_file = settings.session_file
-    ensure_session_exists(session_file)
-    session = SessionStore(file_path=session_file)
-    session.delete_file()
-    logging.info(f"Deleted file: {session_file}")
+    try:
+        chop_impl()
+        raise Exit(code=0)
+    except EmptySessionError as e:
+        logging.error(f"{type(e).__name__} : {str(e)}")
+        raise Exit(code=1)
