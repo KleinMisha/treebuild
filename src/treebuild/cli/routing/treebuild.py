@@ -6,7 +6,7 @@ from typing import Annotated, Optional
 
 from typer import Argument, Exit, Option, Typer, echo
 
-from treebuild.cli.commands.treebuild import grow_impl, plant_impl
+from treebuild.cli.commands.treebuild import grow_impl, plant_impl, prune_impl
 from treebuild.cli.helpers import ensure_session_exists, load_message
 from treebuild.core.exceptions import (
     EmptySessionError,
@@ -141,39 +141,20 @@ def prune(
 ) -> None:
     """Remove (a) path(s) to the current session's tree."""
 
+    # Improper call to the command.
     if not (paths or remove_all):
         logging.error(
             "Please enter paths to remove or use the `--all` flag to indicate all paths should be removed.\n"
             "Try it again!"
         )
-        raise Exit(1)
+        raise Exit(code=1)
 
-    settings = get_settings()
-    session_file = settings.session_file
-
-    # Error path: Redirect user to command to call first
-    ensure_session_exists(session_file)
-
-    # Happy path: Remove paths from the file
-    session = SessionStore(file_path=session_file)
-
-    if not session.has_paths():
-        logging.error("No paths to remove.")
-        raise Exit(1)
-
-    if remove_all:
-        _paths = session.read_paths()
-        session.remove_all_paths()
-        logging.info(f"Removed all paths: {_paths}")
-        raise Exit(0)
-
-    _paths = paths or []
-    for p in _paths:
-        if normalize(p) in session.read_paths():
-            session.remove_path(p)
-            logging.info(f"Path removed: {p}")
-        else:
-            logging.warning(f"Skipping, path not found: {p}")
+    try:
+        prune_impl(paths, remove_all)
+        raise Exit(code=0)
+    except EmptySessionError as e:
+        logging.error(f"{type(e).__name__} : {str(e)}")
+        raise Exit(code=1)
 
 
 @app.command()
