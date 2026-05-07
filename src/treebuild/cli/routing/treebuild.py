@@ -13,6 +13,7 @@ from treebuild.cli.commands.treebuild import (
     prune_impl,
     replant_impl,
     seed_impl,
+    status_impl,
     uproot_impl,
 )
 from treebuild.cli.helpers import load_message
@@ -22,7 +23,6 @@ from treebuild.core.exceptions import (
     RootAlreadySetError,
     SessionAlreadyExistsError,
 )
-from treebuild.core.settings import get_settings
 from treebuild.harvest.render_factory import RenderMethod, get_renderer
 from treebuild.storage.session import SessionStore
 from treebuild.tree.builder import TreeBuilder
@@ -75,40 +75,8 @@ def demo() -> None:
 @app.command()
 def status() -> None:
     """Display current paths stored in session."""
-
-    settings = get_settings()
-    session_file = settings.session_file
-
-    if not session_file.exists():
-        message = load_message("status_no_tree.md")
-        echo(message)
-        raise Exit(code=0)
-
-    session = SessionStore(session_file)
-    if not (session.has_paths() or session.has_root()):
-        message = load_message("status_empty_tree.md")
-        echo(message)
-        raise Exit(code=0)
-
-    if not session.has_paths():
-        message_1 = load_message("status_show_root.md")
-        message_2 = load_message("status_no_nodes.md")
-        echo(message_1.format(root=session.read_root()))
-        echo(message_2)
-        raise Exit(0)
-
-    if not session.has_root():
-        message_1 = load_message("status_no_root.md")
-        message_2 = load_message("status_show_nodes.md")
-        echo(message_1)
-        echo(message_2.format(paths="\n".join(session.read_paths())))
-        raise Exit(0)
-
-    # at this point, we are certain you have both a root and at least one leaf/branch added.
-    message_1 = load_message("status_show_root.md")
-    message_2 = load_message("status_show_nodes.md")
-    echo(message_1.format(root=session.read_root()))
-    echo(message_2.format(paths="\n".join(session.read_paths())))
+    status_impl()
+    raise Exit(code=0)
 
 
 @app.command()

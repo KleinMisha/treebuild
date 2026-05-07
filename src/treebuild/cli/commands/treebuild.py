@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from treebuild.cli.helpers import NO_SESSION_MSG
+from treebuild.cli.helpers import NO_SESSION_MSG, load_message
 from treebuild.core.exceptions import (
     DuplicatePathError,
     EmptySessionError,
@@ -37,6 +37,44 @@ def plant_impl(root: Optional[str] = None) -> None:
         session = SessionStore(session_file)
         session.write_root(root)
         logging.info(f"Written tree root: {root}")
+
+
+def status_impl() -> None:
+    """Display current paths stored in session."""
+
+    settings = get_settings()
+    session_file = settings.session_file
+
+    if not session_file.exists():
+        message = load_message("status_no_tree.md")
+        logging.info(message)
+        return
+
+    session = SessionStore(session_file)
+    if not (session.has_paths() or session.has_root()):
+        message = load_message("status_empty_tree.md")
+        logging.info(message)
+        return
+
+    if not session.has_paths():
+        message_1 = load_message("status_show_root.md")
+        message_2 = load_message("status_no_nodes.md")
+        logging.info(message_1.format(root=session.read_root()))
+        logging.info(message_2)
+        return
+
+    if not session.has_root():
+        message_1 = load_message("status_no_root.md")
+        message_2 = load_message("status_show_nodes.md")
+        logging.info(message_1)
+        logging.info(message_2.format(paths="\n".join(session.read_paths())))
+        return
+
+    # at this point, we are certain you have both a root and at least one leaf/branch added.
+    message_1 = load_message("status_show_root.md")
+    message_2 = load_message("status_show_nodes.md")
+    logging.info(message_1.format(root=session.read_root()))
+    logging.info(message_2.format(paths="\n".join(session.read_paths())))
 
 
 def grow_impl(paths: list[str]) -> None:
