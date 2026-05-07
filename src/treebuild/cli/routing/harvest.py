@@ -12,9 +12,7 @@ from treebuild.core.exceptions import (
     NoRootSetError,
     RootDirNotFoundError,
 )
-from treebuild.core.settings import get_settings
 from treebuild.harvest.render_factory import RenderMethod
-from treebuild.storage.session import SessionStore
 
 harvest_app = Typer(invoke_without_command=True, name="harvest")
 
@@ -82,15 +80,6 @@ def scaffold(
     """
     try:
         scaffold_impl(location, gitkeep, dry_run)
-        if not dry_run:
-            base_path = location or Path.cwd()
-            settings = get_settings()
-            session_file = settings.session_file
-            session = SessionStore(session_file)
-            root_name = session.read_root()
-            # just to satisfy type-checker. Logically, this is condition guaranteed to be met as we did not raise NoRootSetError
-            assert root_name is not None
-            echo(f"Created: {base_path / root_name}")
         raise Exit(code=0)
     except (EmptySessionError, NoRootSetError) as e:
         logging.error(f"{type(e).__name__}:{str(e)}")
@@ -116,15 +105,6 @@ def teardown(
     """
     try:
         teardown_impl(location, dry_run)
-        if not dry_run:
-            base_path = location or Path.cwd()
-            settings = get_settings()
-            session_file = settings.session_file
-            session = SessionStore(session_file)
-            root_name = session.read_root()
-            # just to satisfy type-checker. Logically, this is condition guaranteed to be met as we did not raise NoRootSetError
-            assert root_name is not None
-            echo(f"Removed: {base_path / root_name}")
         raise Exit(code=0)
     except (EmptySessionError, NoRootSetError, RootDirNotFoundError) as e:
         logging.error(f"{type(e).__name__}:{str(e)}")

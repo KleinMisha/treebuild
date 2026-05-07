@@ -1,5 +1,6 @@
 """Implementation of secondary commands, which will be called as 'treebuild harvest <COMMAND> <ARGS> <OPTIONS>'"""
 
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -93,6 +94,10 @@ def scaffold_impl(
     materializer = Materializer()
     materializer.materialize_tree(tree, base_path, gitkeep, dry_run)
 
+    # log message / inform user
+    if not dry_run:
+        logging.info(f"Created: {base_path / tree.root.name}")
+
 
 def teardown_impl(location: Optional[Path] = None, dry_run: bool = False) -> None:
     """
@@ -124,3 +129,6 @@ def teardown_impl(location: Optional[Path] = None, dry_run: bool = False) -> Non
     # de-materialize the tree
     materializer = Materializer()
     materializer.dematerialize_tree(tree, base_path, dry_run)
+    # log message / inform user
+    if not dry_run:
+        logging.info(f"Removed: {base_path / tree.root.name}")
