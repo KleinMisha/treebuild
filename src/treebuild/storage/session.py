@@ -64,10 +64,14 @@ class SessionStore:
         -----
         If no value for entry is given, the last entered path in the file will be removed.
         """
+        root_name = self.read_root()
         current_paths = self.read_paths()
         path_to_delete = normalize(entry) if entry else current_paths[-1]
         paths_to_keep = [p for p in current_paths if p != path_to_delete]
         with self.file.open("w") as f:
+            if root_name:
+                f.write(f"{ROOT_NAME_PREFIX} {root_name}\n")
+
             for path in paths_to_keep:
                 f.write(str(path))
                 f.write("\n")
