@@ -1,10 +1,9 @@
 """Primary commands, which will be called as 'treebuild <COMMAND> <ARGS> <OPTIONS>'"""
 
 import logging
-from pathlib import Path
 from typing import Annotated, Optional
 
-from typer import Argument, Exit, Option, Typer, echo
+from typer import Abort, Argument, Exit, Option, Typer, echo
 
 from treebuild.cli.commands.treebuild import (
     chop_impl,
@@ -16,16 +15,14 @@ from treebuild.cli.commands.treebuild import (
     status_impl,
     uproot_impl,
 )
-from treebuild.cli.helpers import load_message
+from treebuild.cli.walkthrough import interactive_demo, interrupt_demo
 from treebuild.core.exceptions import (
     EmptySessionError,
     NoRootSetError,
     RootAlreadySetError,
     SessionAlreadyExistsError,
+    TreeBuildError,
 )
-from treebuild.harvest.render_factory import RenderMethod, get_renderer
-from treebuild.storage.session import SessionStore
-from treebuild.tree.builder import TreeBuilder
 
 app = Typer()
 
@@ -39,37 +36,15 @@ def hello() -> None:
 @app.command()
 def demo() -> None:
     """Demonstrates (basic) treebuild workflow"""
-
-    echo(load_message("demo.md"))
-    # -- FOLLOW DEMO ---
-
-    # plant a tree:
-    temp_session_file = Path().home() / ".config" / "treebuild" / "demo.txt"
-    root_name = "myproject"
-    session = SessionStore(temp_session_file)
-    session.write_root(root_name)
-
-    # grow the tree:
-    path_names = [
-        "myproject/first_folder/file.py",
-        "myproject/second_folder/another_file.json",
-        "/second_folder/yet_another.file",
-        "empty_folder/",
-        ".dotfile",
-        "README.md",
-    ]
-    for path in path_names:
-        session.write_path(path)
-
-    # harvest text:
-    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
-    tree = builder.assemble_tree()
-    renderer = get_renderer(RenderMethod.PLAIN)
-    rendering = renderer.render_tree(tree, include_root=True)
-    echo(rendering)
-
-    # remove temporary file
-    session.delete_file()
+    try:
+        interactive_demo()
+        raise Exit(code=0)
+    except Abort:
+        interrupt_demo()
+        raise Exit(code=0)
+    except TreeBuildError as e:
+        logging.error(f"{type(e).__name__}:{str(e)}")
+        raise Exit(code=1)
 
 
 @app.command()
