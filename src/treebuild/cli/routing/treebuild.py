@@ -15,7 +15,7 @@ from treebuild.cli.commands.treebuild import (
     status_impl,
     uproot_impl,
 )
-from treebuild.cli.walkthrough import interactive_demo, interrupt_demo
+from treebuild.cli.walkthrough import interactive_demo, interrupt_demo, quickstart_impl
 from treebuild.core.exceptions import (
     EmptySessionError,
     NoRootSetError,
@@ -41,6 +41,20 @@ def demo() -> None:
         raise Exit(code=0)
     except Abort:
         interrupt_demo()
+        raise Exit(code=0)
+    except TreeBuildError as e:
+        logging.error(f"{type(e).__name__}:{str(e)}")
+        raise Exit(code=1)
+
+
+@app.command()
+def quickstart() -> None:
+    """Interactive walkthrough, no need to know any of the commands."""
+    try:
+        quickstart_impl()
+        raise Exit(code=0)
+    except Abort:
+        echo("\n Interrupting the quickstart setup. Your session is saved.")
         raise Exit(code=0)
     except TreeBuildError as e:
         logging.error(f"{type(e).__name__}:{str(e)}")
