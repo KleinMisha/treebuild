@@ -222,17 +222,19 @@ def interactive_demo() -> None:
 def interrupt_demo() -> None:
     """If the user quits the demo midway"""
     echo("Demo interrupted. Cleaning up files created in demo.")
+    echo("Removing the created demo project from filesystem...")
     try:
-        echo("Removing the created demo project from filesystem.")
         teardown_impl()
-    except (NoRootSetError, RootDirNotFoundError):
-        echo("No files materialized, no cleanup needed. ")
+        echo("✓ Done.")
+    except (NoRootSetError, RootDirNotFoundError, EmptySessionError):
+        echo("✓ No files materialized, no cleanup needed. ")
 
+    echo("Removing the created session store...")
     try:
-        echo("Removing the created session store.")
         chop_impl()
+        echo("✓ Done.")
     except EmptySessionError:
-        echo("Nothing to cleanup.")
+        echo("No cleanup needed.")
         return
 
 

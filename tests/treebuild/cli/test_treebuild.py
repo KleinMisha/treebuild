@@ -1,18 +1,24 @@
 """Integration tests for commands directly under the tool name (treebuild ...): src/treebuild/cli/treebuild.py"""
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from typer.testing import CliRunner
 
 from treebuild.cli.entrypoint import app
 from treebuild.cli.helpers import load_message
+from treebuild.cli.walkthrough import CORRECT_DEMO_INPUTS
 from treebuild.storage.session import SessionStore, normalize
 
 
 def static_part(message: str) -> str:
     """Get the part of the message before the first {placeholder}"""
     return message.split("{")[0].strip()
+
+
+DEMO_NO_QUICKSTART = CORRECT_DEMO_INPUTS + ["n"]
+DEMO_YES_QUICKSTART = CORRECT_DEMO_INPUTS + ["y"]
 
 
 # --- treebuild hello: health check ---
@@ -27,14 +33,46 @@ def test_hello() -> None:
 
 
 # --- treebuild demo ---
-@pytest.mark.xfail(reason="Demo is now interactive. Need different test.")
-def test_demo() -> None:
-    """Display demo message"""
-    runner = CliRunner()
-    result = runner.invoke(app, ["demo"])
-    expected_message = load_message("demo.md")
+def test_demo_run_until_completion(empty_session: tuple[Path, dict[str, str]]) -> None:
+    """Go through the full demo, make sure your state (the session file etc.) no longer exist afterwards."""
+    file, environment = empty_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["demo"], input="\n".join(DEMO_NO_QUICKSTART))
     assert result.exit_code == 0
-    assert static_part(expected_message) in result.stdout
+    assert not file.exists()
+    assert not Path("./demo-project/").exists()
+
+
+def test_demo_enters_quickstart(empty_session: tuple[Path, dict[str, str]]) -> None:
+    """Test entering the quickstart implementation if user chooses to do such."""
+    with patch("treebuild.cli.walkthrough.quickstart_impl") as mock_quickstart:
+        file, environment = empty_session
+        runner = CliRunner(env=environment)
+        result = runner.invoke(app, ["demo"], input="\n".join(DEMO_YES_QUICKSTART))
+        assert result.exit_code == 0
+        mock_quickstart.assert_called_once()
+        assert not file.exists()
+        assert not Path("demo-project/").exists()
+
+
+@pytest.mark.parametrize(
+    "steps_completed", [n for n in range(1, len(DEMO_NO_QUICKSTART) + 1)]
+)
+def test_demo_keyboard_interrupt_triggers_cleanup(
+    empty_session: tuple[Path, dict[str, str]], steps_completed: int
+) -> None:
+    """Interrupt the demo midway --> ensure cleanup still happens properly."""
+
+    partial_inputs = DEMO_NO_QUICKSTART[:steps_completed]
+    file, environment = empty_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["demo"], input="\n".join(partial_inputs + ["\x03"]))
+    assert result.exit_code == 0
+    assert not file.exists()
+    assert not Path("demo-project/").exists()
+
+
+# --- treebuild quickstart ---
 
 
 # --- treebuild status ---
