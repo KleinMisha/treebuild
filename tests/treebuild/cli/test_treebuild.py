@@ -9,6 +9,7 @@ from typer.testing import CliRunner
 from treebuild.cli.entrypoint import app
 from treebuild.cli.helpers import load_message
 from treebuild.cli.walkthrough import CORRECT_DEMO_INPUTS
+from treebuild.core.exceptions import TreeBuildError
 from treebuild.storage.session import SessionStore, normalize
 
 
@@ -72,7 +73,65 @@ def test_demo_keyboard_interrupt_triggers_cleanup(
     assert not Path("demo-project/").exists()
 
 
+def test_demo_exits_on_treebuild_error(
+    empty_session: tuple[Path, dict[str, str]],
+) -> None:
+    """Re-raise any TreeBuildError as Exit code 1."""
+    _, environment = empty_session
+    runner = CliRunner(env=environment)
+    with patch("treebuild.cli.routing.treebuild.interactive_demo") as mock_demo:
+        mock_demo.side_effect = TreeBuildError("whoops! something went wrong.")
+        result = runner.invoke(app, ["demo"])
+        assert result.exit_code == 1
+
+
 # --- treebuild quickstart ---
+# def test_quickstart_full_flow_with_materialize_keep(
+#     empty_session: tuple[Path, dict[str, str]],
+# ) -> None: ...
+
+
+# def test_quickstart_full_flow_with_materialize_teardown(
+#     empty_session: tuple[Path, dict[str, str]],
+# ) -> None: ...
+
+
+# def test_quickstart_full_flow_no_materialize(
+#     empty_session: tuple[Path, dict[str, str]],
+# ) -> None: ...
+
+
+# def test_quickstart_skips_render_step(
+#     empty_session: tuple[Path, dict[str, str]],
+# ) -> None: ...
+
+
+# def test_quickstart_clears_existing_session(
+#     active_session: tuple[Path, dict[str, str]],
+# ) -> None: ...
+# def test_quickstart_starts_fresh_session(
+#     empty_session: tuple[Path, dict[str, str]],
+# ) -> None: ...
+
+
+# def test_quickstart_grow_single_path(
+#     empty_session: tuple[Path, dict[str, str]],
+# ) -> None: ...
+# def test_quickstart_grow_multiple_paths(
+#     empty_session: tuple[Path, dict[str, str]],
+# ) -> None: ...
+# def test_quickstart_prune_path(empty_session: tuple[Path, dict[str, str]]) -> None: ...
+# def test_quickstart_grow_then_prune(
+#     empty_session: tuple[Path, dict[str, str]],
+# ) -> None: ...
+# def test_quickstart_continues_after_single_action(
+#     empty_session: tuple[Path, dict[str, str]],
+# ) -> None: ...
+
+
+# def test_quickstart_abort_preserves_session(
+#     empty_session: tuple[Path, dict[str, str]],
+# ) -> None: ...
 
 
 # --- treebuild status ---
