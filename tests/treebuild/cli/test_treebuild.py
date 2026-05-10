@@ -10,7 +10,10 @@ from treebuild.cli.entrypoint import app
 from treebuild.cli.helpers import load_message
 from treebuild.cli.walkthrough import CORRECT_DEMO_INPUTS
 from treebuild.core.exceptions import TreeBuildError
+from treebuild.harvest.plain_text_renderer import PlainTextRenderer
+from treebuild.harvest.render_factory import RenderMethod
 from treebuild.storage.session import SessionStore, normalize
+from treebuild.tree.builder import TreeBuilder
 
 
 def static_part(message: str) -> str:
@@ -86,52 +89,258 @@ def test_demo_exits_on_treebuild_error(
 
 
 # --- treebuild quickstart ---
-# def test_quickstart_full_flow_with_materialize_keep(
-#     empty_session: tuple[Path, dict[str, str]],
-# ) -> None: ...
+def test_quickstart_full_flow_with_materialize_keep(
+    empty_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    user_input = [
+        "root",  # name of root
+        "1",  # add to tree
+        "some_file.txt",  # add a path,
+        "1",  # add another,
+        "root/dirname/",  # empty directory
+        "3",  # continue to next step
+        "1",  # render (first option)
+        "y",  # show the root
+        f"{len(RenderMethod) + 1}",  # continue to next step
+        "y",  # materialize
+        f"{str(tmp_path)}",  # root's location
+        "y",  # add .gitkeep
+        "y",  # keep
+    ]
+    file, environment = empty_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["quickstart"], input="\n".join(user_input))
+    assert result.exit_code == 0
+    assert file.exists()
+
+    # check if rendering is in output
+    builder = TreeBuilder("root", paths=["some_file.txt", "root/dirname/"])
+    tree = builder.assemble_tree()
+    renderer = PlainTextRenderer()
+    assert renderer.render_tree(tree, True) in result.stdout
+
+    #  materialize
+    assert (tmp_path / "root" / "dirname" / ".gitkeep").exists()
 
 
-# def test_quickstart_full_flow_with_materialize_teardown(
-#     empty_session: tuple[Path, dict[str, str]],
-# ) -> None: ...
+def test_quickstart_full_flow_with_materialize_teardown(
+    empty_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    user_input = [
+        "root",  # name of root
+        "1",  # add to tree
+        "some_file.txt",  # add a path,
+        "1",  # add another,
+        "root/dirname/",  # empty directory
+        "3",  # continue to next step
+        "1",  # render (first option)
+        "y",  # show the root
+        f"{len(RenderMethod) + 1}",  # continue to next step
+        "y",  # materialize
+        f"{str(tmp_path)}",  # root's location
+        "y",  # add .gitkeep
+        "n",  # teardown
+    ]
+    file, environment = empty_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["quickstart"], input="\n".join(user_input))
+    assert result.exit_code == 0
+    assert file.exists()
+
+    # check if rendering is in output
+    builder = TreeBuilder("root", paths=["some_file.txt", "root/dirname/"])
+    tree = builder.assemble_tree()
+    renderer = PlainTextRenderer()
+    assert renderer.render_tree(tree, True) in result.stdout
+
+    # de-materialized, so shouldn't exist any longer.
+    assert not (tmp_path / "root" / "dirname" / ".gitkeep").exists()
 
 
-# def test_quickstart_full_flow_no_materialize(
-#     empty_session: tuple[Path, dict[str, str]],
-# ) -> None: ...
+def test_quickstart_no_materialize(
+    empty_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """Only render, do not materialize."""
+    user_input = [
+        "root",  # name of root
+        "1",  # add to tree
+        "some_file.txt",  # add a path,
+        "1",  # add another,
+        "root/dirname/",  # empty directory
+        "3",  # continue to next step
+        "1",  # render (first option)
+        "y",  # show the root
+        f"{len(RenderMethod) + 1}",  # continue to next step
+        "n",  # materialize
+    ]
+    file, environment = empty_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["quickstart"], input="\n".join(user_input))
+    assert result.exit_code == 0
+    assert file.exists()
+
+    # check if rendering is in output
+    builder = TreeBuilder("root", paths=["some_file.txt", "root/dirname/"])
+    tree = builder.assemble_tree()
+    renderer = PlainTextRenderer()
+    assert renderer.render_tree(tree, True) in result.stdout
+
+    # do not materialize
+    assert not (tmp_path / "root" / "dirname" / ".gitkeep").exists()
 
 
-# def test_quickstart_skips_render_step(
-#     empty_session: tuple[Path, dict[str, str]],
-# ) -> None: ...
+def test_quickstart_skip_render_step(
+    empty_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    user_input = [
+        "root",  # name of root
+        "1",  # add to tree
+        "some_file.txt",  # add a path,
+        "1",  # add another,
+        "root/dirname/",  # empty directory
+        "3",  # continue to next step
+        f"{len(RenderMethod) + 1}",  # continue to next step
+        "y",  # materialize
+        f"{str(tmp_path)}",  # root's location
+        "y",  # add .gitkeep
+        "y",  # keep
+    ]
+    file, environment = empty_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["quickstart"], input="\n".join(user_input))
+    assert result.exit_code == 0
+    assert file.exists()
+
+    # check if rendering is not in output
+    builder = TreeBuilder("root", paths=["some_file.txt", "root/dirname/"])
+    tree = builder.assemble_tree()
+    renderer = PlainTextRenderer()
+    assert renderer.render_tree(tree, True) not in result.stdout
+
+    # do materialize
+    assert (tmp_path / "root" / "dirname" / ".gitkeep").exists()
 
 
-# def test_quickstart_clears_existing_session(
-#     active_session: tuple[Path, dict[str, str]],
-# ) -> None: ...
-# def test_quickstart_starts_fresh_session(
-#     empty_session: tuple[Path, dict[str, str]],
-# ) -> None: ...
+def test_quickstart_clears_existing_session(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    user_input = [
+        "root",  # name of root
+        "3",  # continue to next step
+        f"{len(RenderMethod) + 1}",  # continue to next step
+        "n",  # do not materialize
+    ]
+    file, environment = active_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["quickstart"], input="\n".join(user_input))
+    assert result.exit_code == 0
+
+    # check that session was cleared
+    session = SessionStore(file)
+    assert session.read_paths() == []
+
+    # check if rendering is not in output
+    builder = TreeBuilder("root", paths=["some_file.txt", "root/dirname/"])
+    tree = builder.assemble_tree()
+    renderer = PlainTextRenderer()
+    assert renderer.render_tree(tree, True) not in result.stdout
+
+    # do not materialize
+    assert not (tmp_path / "root" / "dirname" / ".gitkeep").exists()
 
 
-# def test_quickstart_grow_single_path(
-#     empty_session: tuple[Path, dict[str, str]],
-# ) -> None: ...
-# def test_quickstart_grow_multiple_paths(
-#     empty_session: tuple[Path, dict[str, str]],
-# ) -> None: ...
-# def test_quickstart_prune_path(empty_session: tuple[Path, dict[str, str]]) -> None: ...
-# def test_quickstart_grow_then_prune(
-#     empty_session: tuple[Path, dict[str, str]],
-# ) -> None: ...
-# def test_quickstart_continues_after_single_action(
-#     empty_session: tuple[Path, dict[str, str]],
-# ) -> None: ...
+def test_quickstart_grow_multiple_paths(
+    empty_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """enter multiple paths, space separated"""
+    user_input = [
+        "root",  # name of root
+        "1",  # add to tree
+        "some_file.txt root/dirname/",  # add a paths,
+        "3",  # continue to next step
+        "1",  # render (first option)
+        "y",  # show the root
+        f"{len(RenderMethod) + 1}",  # continue to next step
+        "y",  # materialize
+        f"{str(tmp_path)}",  # root's location
+        "y",  # add .gitkeep
+        "y",  # keep
+    ]
+    file, environment = empty_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["quickstart"], input="\n".join(user_input))
+    assert result.exit_code == 0
+    assert file.exists()
+
+    # check if rendering is in output
+    builder = TreeBuilder("root", paths=["some_file.txt", "root/dirname/"])
+    tree = builder.assemble_tree()
+    renderer = PlainTextRenderer()
+    assert renderer.render_tree(tree, True) in result.stdout
+
+    #  materialize
+    assert (tmp_path / "root" / "dirname" / ".gitkeep").exists()
 
 
-# def test_quickstart_abort_preserves_session(
-#     empty_session: tuple[Path, dict[str, str]],
-# ) -> None: ...
+def test_quickstart_prune_path(
+    empty_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    user_input = [
+        "root",  # name of root
+        "1",  # add to tree
+        "some_file.txt root/dirname/",  # add a paths,
+        "2",  # remove a path
+        "root/dirname/",  # path to remove
+        "3",  # continue to next step
+        "1",  # render (first option)
+        "y",  # show the root
+        f"{len(RenderMethod) + 1}",  # continue to next step
+        "y",  # materialize
+        f"{str(tmp_path)}",  # root's location
+        "y",  # add .gitkeep
+        "y",  # keep
+    ]
+    file, environment = empty_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["quickstart"], input="\n".join(user_input))
+    assert result.exit_code == 0
+    assert file.exists()
+
+    # check if rendering is in output
+    builder = TreeBuilder("root", paths=["some_file.txt"])
+    tree = builder.assemble_tree()
+    renderer = PlainTextRenderer()
+    assert renderer.render_tree(tree, True) in result.stdout
+
+    #  materialize only remaining path
+    assert (tmp_path / "root" / "some_file.txt").exists()
+    assert not (tmp_path / "root" / "dirname" / ".gitkeep").exists()
+
+
+def test_quickstart_keyboard_interrupt_preserves_session(
+    empty_session: tuple[Path, dict[str, str]],
+) -> None:
+    user_input = [
+        "root",  # name of root
+        "\x03",  # keyboard interrupt
+    ]
+    file, environment = empty_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["quickstart"], input="\n".join(user_input))
+    assert result.exit_code == 0
+    assert file.exists()
+
+
+def test_quickstart_exits_on_treebuild_error(
+    empty_session: tuple[Path, dict[str, str]],
+) -> None:
+    """Re-raise any TreeBuildError as Exit code 1."""
+    _, environment = empty_session
+    runner = CliRunner(env=environment)
+    with patch("treebuild.cli.routing.treebuild.quickstart_impl") as mock_quickstart:
+        mock_quickstart.side_effect = TreeBuildError("whoops! something went wrong.")
+        result = runner.invoke(app, ["quickstart"])
+        assert result.exit_code == 1
 
 
 # --- treebuild status ---
