@@ -31,7 +31,7 @@ CliCommand = Callable[..., None]
 
 # Define the expected inputs for the interactive demo. Makes it adjustable / testable (tests can input the 'public' constant)
 
-_PAUSE = "PAUSE"  # sentinel value for typer.pause() input
+_PAUSE = "_"  # sentinel value for typer.pause() input
 _PLANT_CMD = "treebuild plant"
 _SEED_CMD = "treebuild seed demo-project"
 _STATUS_CMD = "treebuild status"
