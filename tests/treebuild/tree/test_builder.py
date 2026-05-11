@@ -1,5 +1,7 @@
 """Unit tests for src/treebuilder/tree/builder.py"""
 
+import pytest
+
 from treebuild.tree.builder import Branch, Tree, TreeBuilder
 
 
@@ -149,4 +151,98 @@ def test_assemble_tree_mixed_leaves_and_branches() -> None:
     )
     builder = TreeBuilder("root", filenames)
     tree = builder.assemble_tree()
+    assert tree == expected_tree
+
+
+def test_root_prefix_stripped_from_path() -> None:
+    """Adding the root name to the path should be optional."""
+    builder = TreeBuilder(
+        root_name="root",
+        paths=["root/some_file.txt", "root/dir/file.txt", "root/dir/subdir/file.py"],
+    )
+    tree = builder.assemble_tree()
+
+    # Manually construct expected tree
+    expected_tree = Tree(Branch("root"))
+    expected_tree.add_leaf("some_file.txt")
+    dir_branch = Branch("dir")
+    dir_branch.add_leaf("file.txt")
+    subdir = Branch("subdir")
+    subdir.add_leaf("file.py")
+    dir_branch.add_child_branch(subdir)
+    expected_tree.add_branch(dir_branch)
+    assert tree == expected_tree
+
+
+def test_cwd_prefix_stripped_from_path() -> None:
+    """Adding '.' as a prefix should be the same as adding the root name."""
+    builder = TreeBuilder(
+        root_name="root",
+        paths=["./some_file.txt", "./dir/file.txt", "./dir/subdir/file.py"],
+    )
+    tree = builder.assemble_tree()
+
+    # Manually construct expected tree
+    expected_tree = Tree(Branch("root"))
+    expected_tree.add_leaf("some_file.txt")
+    dir_branch = Branch("dir")
+    dir_branch.add_leaf("file.txt")
+    subdir = Branch("subdir")
+    subdir.add_leaf("file.py")
+    dir_branch.add_child_branch(subdir)
+    expected_tree.add_branch(dir_branch)
+    assert tree == expected_tree
+
+
+def test_mix_prefixes() -> None:
+    """Adding a '.' or the root name, or neither, all the same."""
+    builder = TreeBuilder(
+        root_name="root",
+        paths=["./some_file.txt", "root/dir/file.txt", "dir/subdir/file.py"],
+    )
+    tree = builder.assemble_tree()
+
+    # Manually construct expected tree
+    expected_tree = Tree(Branch("root"))
+    expected_tree.add_leaf("some_file.txt")
+    dir_branch = Branch("dir")
+    dir_branch.add_leaf("file.txt")
+    subdir = Branch("subdir")
+    subdir.add_leaf("file.py")
+    dir_branch.add_child_branch(subdir)
+    expected_tree.add_branch(dir_branch)
+    assert tree == expected_tree
+
+
+@pytest.mark.xfail(reason="Issue #5 - not addressed yet.")
+def test_adding_leaves_to_empty_dir() -> None:
+    """First add an empty directory, next add an item to this directory, should correctly interpret it as empty-dir not being present by itself."""
+    builder = TreeBuilder(
+        root_name="root",
+        paths=["empty_dir/", "empty_dir/no_longer.txt"],
+    )
+    tree = builder.assemble_tree()
+
+    # Manually construct expected tree
+    expected_tree = Tree(Branch("root"))
+    empty_dir = Branch("empty_dir")
+    empty_dir.add_leaf("no_longer.txt")
+    expected_tree.add_branch(empty_dir)
+    assert tree == expected_tree
+
+
+@pytest.mark.xfail(reason="Issue #5 - not addressed yet.")
+def test_adding_redundant_dirname() -> None:
+    """First add a nested path, next add the parent directory, should correctly ignore it."""
+    builder = TreeBuilder(
+        root_name="root",
+        paths=["empty_dir/no_longer.txt", "empty_dir/"],
+    )
+    tree = builder.assemble_tree()
+
+    # Manually construct expected tree
+    expected_tree = Tree(Branch("root"))
+    empty_dir = Branch("empty_dir")
+    empty_dir.add_leaf("no_longer.txt")
+    expected_tree.add_branch(empty_dir)
     assert tree == expected_tree

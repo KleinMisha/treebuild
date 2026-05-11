@@ -148,6 +148,16 @@ def test_has_no_paths(session_file: Path) -> None:
     assert not session.has_paths()
 
 
+def test_remove_path_preserves_root(session_file: Path) -> None:
+    """Correctly get back root name after removing a specific leaf or branch."""
+    session = SessionStore(session_file)
+    session.write_root("root")
+    session.write_path("a/valid/path")
+    session.write_path("another_valid.path")
+    session.remove_path("another_valid.path")
+    assert session.read_root() == "root"
+
+
 def test_remove_all_paths_preserves_root(session_file: Path) -> None:
     """Correctly get back root name after removing all other leaves and branches."""
     session = SessionStore(session_file)

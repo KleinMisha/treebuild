@@ -32,13 +32,15 @@ class TreeBuilder:
         directly_under_root: list[TreePath] = []
         for p in self._paths:
             # If a file is directly placed in the root, do not strip the path first
-            if len(p.path.parts) == 1:
-                directly_under_root.append(p)
-            else:
+            if p.path.parts[0] == self.root:
                 # strip nested paths first
                 directly_under_root.append(
                     TreePath(Path("/".join(p.path.parts[1:])), p.is_dir)
                 )
+            else:
+                # first directory name is still directly under root or it is a file.
+                directly_under_root.append(p)
+
         return directly_under_root
 
     def assemble_tree(self) -> Tree:

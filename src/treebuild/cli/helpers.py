@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-from typer import Exit, echo
-
 # Where messages are stored.
 MESSAGES_DIR = Path(__file__).parent / "messages"
 
@@ -13,9 +11,6 @@ def load_message(filename: str) -> str:
     return file.read_text()
 
 
-def ensure_session_exists(session_file: Path) -> None:
-    """Most commands need share this check: Ensure a session file has been created."""
-    if not session_file.exists():
-        msg = load_message("status_no_tree.md")
-        echo(msg)
-        raise Exit(code=1)
+# TODO figure out what to do with this message --> basically want to do either a "no file at all" or "file found, but no paths/root"
+# TODO Status command for sure needs them individually, let's see ..
+NO_SESSION_MSG = load_message("status_no_tree.md")
