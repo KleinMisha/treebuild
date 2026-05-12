@@ -521,11 +521,54 @@ def test_grow_skips_duplicates(active_session: tuple[Path, dict[str, str]]) -> N
     result = runner.invoke(app, ["grow"] + duplicates)
     assert result.exit_code == 0
     # check that regardless of skipping it, the user gets updated something happened with their entry
-    assert all(name in result.stdout for name in duplicates)
+    assert all(normalize(name) in result.stdout for name in duplicates)
 
     session = SessionStore(file)
     assert set(session.read_paths()) == set([normalize(p) for p in unique])
     assert all(session.read_paths().count(normalize(name)) == 1 for name in unique)
+
+
+def test_grow_skips_redundant(active_session: tuple[Path, dict[str, str]]) -> None:
+    """A parent (or grandparent) branch to an already existing branch or leaf should get skipped"""
+    merged_paths = ["path/to/file.inside"]
+    incl_redundant = ["path/to/file.inside", "path/to/", "path/"]
+    file, environment = active_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["grow"] + incl_redundant)
+    # check that regardless of skipping it, the user gets updated something happened with their entry
+    assert all(normalize(name) in result.stdout for name in incl_redundant)
+
+    session = SessionStore(file)
+    assert set(session.read_paths()) == set([normalize(p) for p in merged_paths])
+
+
+def test_grow_removes_redundant_parents(
+    active_session: tuple[Path, dict[str, str]],
+) -> None:
+    """Adding a leaf or brach to a an empty Branch should remove teh empty Branch as a separate entry."""
+    merged_paths = ["path/to/file.inside"]
+    incl_redundant = ["path/to/", "path/", "path/to/file.inside"]
+    file, environment = active_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["grow"] + incl_redundant)
+    # check that regardless of skipping it, the user gets updated something happened with their entry
+    assert all(normalize(name) in result.stdout for name in incl_redundant)
+
+    session = SessionStore(file)
+    assert set(session.read_paths()) == set([normalize(p) for p in merged_paths])
+
+
+def test_grow_siblings_unaffected(active_session: tuple[Path, dict[str, str]]) -> None:
+    """Check sibling directories are not removed by accident"""
+    paths_to_add = ["parent/child/", "parent/sibling/", "parent/child/file.txt"]
+    file, environment = active_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["grow"] + paths_to_add)
+    session = SessionStore(file)
+    assert all(normalize(name) in result.stdout for name in paths_to_add)
+    assert set(session.read_paths()) == set(
+        [normalize(p) for p in ["parent/child/file.txt", "parent/sibling/"]]
+    )
 
 
 # --- treebuild prune ---

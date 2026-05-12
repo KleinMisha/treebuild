@@ -91,8 +91,8 @@ def grow_impl(paths: list[str]) -> None:
         try:
             session.write_path(p)
             logging.info(f"Path added: {p}")
-        except DuplicatePathError:
-            logging.warning(f"Skipping duplicate path: {p}")
+        except DuplicatePathError as e:
+            logging.warning(str(e))
 
 
 def prune_impl(
