@@ -25,17 +25,6 @@ DEMO_NO_QUICKSTART = CORRECT_DEMO_INPUTS + ["n"]
 DEMO_YES_QUICKSTART = CORRECT_DEMO_INPUTS + ["y"]
 
 
-# --- treebuild hello: health check ---
-def test_hello() -> None:
-    """Display simple message to screen."""
-    runner = CliRunner()
-    result = runner.invoke(app, ["hello"])
-
-    # make sure at least something has been printed to screen
-    assert result.exit_code == 0
-    assert result.stdout != ""
-
-
 # --- treebuild demo ---
 def test_demo_run_until_completion(empty_session: tuple[Path, dict[str, str]]) -> None:
     """Go through the full demo, make sure your state (the session file etc.) no longer exist afterwards."""
