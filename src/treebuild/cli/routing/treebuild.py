@@ -28,12 +28,6 @@ app = Typer()
 
 
 @app.command()
-def hello() -> None:
-    """Confirm treebuild-cli is installed properly."""
-    echo("Hello from treebuild!")
-
-
-@app.command()
 def demo() -> None:
     """Demonstrates (basic) treebuild workflow"""
     try:
