@@ -1,5 +1,6 @@
 """Storage of paths between calls to the CLI (to assure persistence of data across multiple sessions)."""
 
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -51,12 +52,29 @@ class SessionStore:
 
         current_paths = self.read_paths()
         normalized = normalize(entry)
-        if normalized in current_paths:
+
+        # exit if entry is exact duplicate (CLI layer will catch and simply log and skip)
+        if self._is_duplicate_path(normalized, current_paths):
+            raise DuplicatePathError(f"Skipping duplicate path: {normalized}")
+
+        # exit if entry is a parent of an already entered child (foo/ vs foo/bar/bli.txt for instance)
+        # (CLI layer will catch and simply log and skip)
+        implied_by = self._entry_is_implied_by(normalized, current_paths)
+        if implied_by:
             raise DuplicatePathError(
-                f"{normalized} already included in current session ({self.file})"
+                f"Redundant entry: {normalized} is implied by {implied_by}"
             )
-        with self.file.open(mode="a") as f:
-            f.write(normalized + "\n")
+
+        # check for any already entered pure parent paths of the new entry (foo/bar/ vs foo/bar/bli.txt for instance)
+        redundant = self._find_redundant_parents(normalized, current_paths)
+        for r in redundant:
+            logging.info(f"Removing redundant path: {r}")
+        entries_to_keep = [p for p in current_paths if p not in redundant] + [
+            normalized
+        ]
+
+        # overwrite the stored paths by the updated list of non-redundant entries
+        self._write_paths(entries_to_keep)
 
     def remove_path(self, entry: Optional[str] = None) -> None:
         """
@@ -124,3 +142,42 @@ class SessionStore:
 
     def delete_file(self) -> None:
         self.file.unlink(missing_ok=True)
+
+    def _is_duplicate_path(self, new: str, existing: list[str]) -> bool:
+        """Does the new entry already exist amongst the earlier entries?"""
+        return new in existing
+
+    def _get_parents(self, entry: str) -> list[str]:
+        """Get all the paths representing possible parent paths."""
+        parents: list[str] = []
+        split_by_slash = entry.split("/")
+        for idx in range(1, len(split_by_slash)):
+            # parent paths are always directories.
+            parent_empty_dir = "/".join(split_by_slash[:idx]) + "/"
+            parents.append(parent_empty_dir)
+        return parents
+
+    def _find_redundant_parents(self, new: str, existing: list[str]) -> list[str]:
+        """A new entry (foo/bar/bli.txt) renders earlier entries redundant (foo/bar/ and/or foo/)"""
+        parents = self._get_parents(new)
+        return [
+            parent for parent in parents if self._is_duplicate_path(parent, existing)
+        ]
+
+    def _entry_is_implied_by(self, new: str, existing: list[str]) -> str | None:
+        """A new entry (foo/) is redundant, as it is already implied by an earlier entry (foo/bar/)"""
+        for old in existing:
+            if new in self._get_parents(old):
+                print(f"{new} is in {self._get_parents(old)}")
+                return old
+        return None
+
+    def _write_paths(self, entries: list[str]) -> None:
+        """`write_path` calls this to write all paths that should be kept post filtering (for duplicates / redundant paths)"""
+        root_name = self.read_root()
+        with self.file.open("w") as f:
+            if root_name:
+                f.write(f"{ROOT_NAME_PREFIX} {root_name}\n")
+            for entry in entries:
+                f.write(str(entry))
+                f.write("\n")

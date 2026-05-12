@@ -214,3 +214,53 @@ def test_trailing_slash_not_counted_as_duplicate(session_file: Path) -> None:
     session.write_path("/some/path/")
     session.write_path("/some/path")
     assert len(session.read_paths()) == 2
+
+
+def test_adding_items_to_empty_dir(session_file: Path) -> None:
+    """Adding a file to an initially empty directory should remove the now redundant path to the empty directory."""
+    session = SessionStore(session_file)
+    session.write_path("/empty_dir/")
+    session.write_path("empty_dir/no_longer.txt")
+    assert session.read_paths() == ["empty_dir/no_longer.txt"]
+
+
+def test_adding_items_to_grandchild_makes_existing_dir_redundant(
+    session_file: Path,
+) -> None:
+    """Adding path/, then add path/to/some/file.py, should eliminate the first entry as it has now become redundant."""
+    session = SessionStore(session_file)
+    session.write_path("path/")
+    session.write_path("path/to/some/file.py")
+    assert session.read_paths() == ["path/to/some/file.py"]
+
+
+def test_adding_a_file_removes_multiple_redundant_ancestors(session_file: Path) -> None:
+    """If grandchild is added, then child and parent cannot be an empty directory anymore."""
+    session = SessionStore(session_file)
+    session.write_path("path/")
+    session.write_path("path/to/")
+    session.write_path("path/to/file.md")
+    assert session.read_paths() == ["path/to/file.md"]
+
+
+def test_rejecting_redundant_dirname(session_file: Path) -> None:
+    """Adding a parent directory to an already added path should reject the new entry."""
+    session = SessionStore(session_file)
+    session.write_path("path/to/file.txt")
+    # test with parent
+    with pytest.raises(DuplicatePathError):
+        session.write_path("path/to/")
+    # test with grandparent
+    with pytest.raises(DuplicatePathError):
+        session.write_path("path/")
+
+
+def test_adding_file_to_empty_dir_keeps_siblings(session_file: Path) -> None:
+    """Check sibling directories are not removed by accident"""
+    session = SessionStore(session_file)
+    session.write_path("parent/child/")
+    session.write_path("parent/sibling/")
+    session.write_path("parent/child/file.bla")
+    assert set(session.read_paths()) == set(
+        ["parent/child/file.bla", "parent/sibling/"]
+    )
