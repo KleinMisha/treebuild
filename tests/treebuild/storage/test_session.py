@@ -253,3 +253,14 @@ def test_rejecting_redundant_dirname(session_file: Path) -> None:
     # test with grandparent
     with pytest.raises(DuplicatePathError):
         session.write_path("path/")
+
+
+def test_adding_file_to_empty_dir_keeps_siblings(session_file: Path) -> None:
+    """Check sibling directories are not removed by accident"""
+    session = SessionStore(session_file)
+    session.write_path("parent/child/")
+    session.write_path("parent/sibling/")
+    session.write_path("parent/child/file.bla")
+    assert set(session.read_paths()) == set(
+        ["parent/child/file.bla", "parent/sibling/"]
+    )
