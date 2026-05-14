@@ -1,6 +1,7 @@
 """Let Pydantic-settings take care of loading settings from ~/.config/treebuild/config.toml"""
 
 from pathlib import Path
+from typing import ClassVar
 
 from pydantic_settings import (
     BaseSettings,
@@ -11,19 +12,22 @@ from pydantic_settings import (
 
 from treebuild.harvest.render_factory import RenderMethod
 
-# DEFAULTS TO FALL BACK TO:
 ENV_PREFIX = "TREEBUILD_"
-GLOBAL_TREEBUILD_DIR = Path().home() / ".config" / "treebuild"
-LOCAL_TREEBUILD_DIR = Path(".treebuild/")
-DEFAULT_SESSION_FILE = "session_tree.txt"
-DEFAULT_SETTINGS_FILE = "settings.toml"
 
 
 class TreeBuildSettings(BaseSettings):
     """Default settings"""
 
+    # Not configurable (Class variables)
+    GLOBAL_TREEBUILD_DIR: ClassVar[Path] = Path().home() / ".config" / "treebuild"
+    LOCAL_TREEBUILD_DIR: ClassVar[Path] = Path(".treebuild/")
+    DEFAULT_SESSION_FILE: ClassVar[str] = "session_tree.txt"
+    DEFAULT_SETTINGS_FILE: ClassVar[str] = "settings.toml"
+    GLOBAL_SETTINGS_PATH: ClassVar[Path] = GLOBAL_TREEBUILD_DIR / DEFAULT_SETTINGS_FILE
+    LOCAL_SETTINGS_PATH: ClassVar[Path] = LOCAL_TREEBUILD_DIR / DEFAULT_SETTINGS_FILE
+
     model_config = SettingsConfigDict(
-        toml_file=Path().home() / ".config" / "treebuild" / "config.toml",
+        toml_file=GLOBAL_SETTINGS_PATH,
         env_prefix=ENV_PREFIX,
     )
     session_file: Path = GLOBAL_TREEBUILD_DIR / DEFAULT_SESSION_FILE
@@ -50,14 +54,12 @@ class TreeBuildSettings(BaseSettings):
         NOTE: ENV variables will only be used for testing purposes. Not intended to be utilized by the user (if they do, it will overwrite any local settings)
         """
 
-        LOCAL_SETTINGS_PATH = LOCAL_TREEBUILD_DIR / DEFAULT_SETTINGS_FILE
-        GLOBAL_SETTINGS_PATH: Path = GLOBAL_TREEBUILD_DIR / DEFAULT_SETTINGS_FILE
         return (
             init_settings,
-            TomlConfigSettingsSource(settings_cls, toml_file=GLOBAL_SETTINGS_PATH),
+            TomlConfigSettingsSource(settings_cls, toml_file=cls.GLOBAL_SETTINGS_PATH),
             TomlConfigSettingsSource(
                 settings_cls,
-                toml_file=LOCAL_SETTINGS_PATH if LOCAL_SETTINGS_PATH else None,
+                toml_file=cls.LOCAL_SETTINGS_PATH if cls.LOCAL_SETTINGS_PATH else None,
             ),
             env_settings,
         )
