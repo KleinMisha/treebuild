@@ -1,7 +1,6 @@
 """Let Pydantic-settings take care of loading settings from ~/.config/treebuild/config.toml"""
 
 from pathlib import Path
-from typing import ClassVar
 
 from pydantic_settings import (
     BaseSettings,
