@@ -1,4 +1,4 @@
-"""Secondary group of commands, which will be called as 'treebuild <COMMAND> <ARGS> <OPTIONS>'"""
+"""Secondary group of commands, which will be called as 'treebuild harvest <COMMAND> <ARGS> <OPTIONS>'"""
 
 import logging
 from pathlib import Path
