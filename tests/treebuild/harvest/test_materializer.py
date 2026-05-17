@@ -1,4 +1,4 @@
-"""unit tests for src/treebuild/creation/filesystem.py"""
+"""unit tests for src/treebuild/harvest/filesystem.py"""
 
 from pathlib import Path
 from unittest.mock import patch
