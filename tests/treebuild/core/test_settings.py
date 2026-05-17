@@ -3,9 +3,15 @@
 from pathlib import Path
 
 from treebuild.core.settings import (
+    GLOBAL_SESSION_PATH,
+    GLOBAL_SETTINGS_PATH,
     GLOBAL_TREEBUILD_DIR,
     LOCAL_TREEBUILD_DIR,
+    SESSION_FILE_NAME,
+    SETTINGS_FILE_NAME,
     SettingsLevel,
+    resolve_session_file,
+    resolve_settings_file,
     resolve_treebuild_dir,
 )
 
@@ -75,3 +81,43 @@ def test_resolve_if_local_dir_only_in_children(tmp_path: Path) -> None:
     local_dir.mkdir(exist_ok=True)
     expected_dir = parent / LOCAL_TREEBUILD_DIR
     assert resolve_treebuild_dir(SettingsLevel.LOCAL, parent) == expected_dir
+
+
+def test_resolve_global_settings_file() -> None:
+    assert (
+        resolve_settings_file(SettingsLevel.GLOBAL, Path("does/not/matter"))
+        == GLOBAL_SETTINGS_PATH
+    )
+
+
+def test_resolve_local_existing_settings_file(tmp_path: Path) -> None:
+    local_dir = tmp_path / ".treebuild/"
+    local_file = local_dir / SETTINGS_FILE_NAME
+    local_dir.mkdir(exist_ok=True)
+    local_file.touch()
+    assert resolve_settings_file(SettingsLevel.LOCAL, tmp_path) == local_file
+
+
+def test_resolve_default_local_settings_file(tmp_path: Path) -> None:
+    local_file = tmp_path / LOCAL_TREEBUILD_DIR / SETTINGS_FILE_NAME
+    assert resolve_settings_file(SettingsLevel.LOCAL, tmp_path) == local_file
+
+
+def test_resolve_global_session_file() -> None:
+    assert (
+        resolve_session_file(SettingsLevel.GLOBAL, Path("does/not/matter"))
+        == GLOBAL_SESSION_PATH
+    )
+
+
+def test_resolve_local_existing_session_file(tmp_path: Path) -> None:
+    local_dir = tmp_path / ".treebuild/"
+    local_file = local_dir / SESSION_FILE_NAME
+    local_dir.mkdir(exist_ok=True)
+    local_file.touch()
+    assert resolve_session_file(SettingsLevel.LOCAL, tmp_path) == local_file
+
+
+def test_resolve_default_local_session_file(tmp_path: Path) -> None:
+    local_file = tmp_path / LOCAL_TREEBUILD_DIR / SESSION_FILE_NAME
+    assert resolve_session_file(SettingsLevel.LOCAL, tmp_path) == local_file

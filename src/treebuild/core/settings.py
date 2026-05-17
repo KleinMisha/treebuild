@@ -23,6 +23,7 @@ SESSION_FILE_NAME = "tree.txt"
 SETTINGS_FILE_NAME = "settings.toml"
 GLOBAL_SETTINGS_PATH = GLOBAL_TREEBUILD_DIR / SETTINGS_FILE_NAME
 LOCAL_SETTINGS_PATH = LOCAL_TREEBUILD_DIR / SETTINGS_FILE_NAME
+GLOBAL_SESSION_PATH = GLOBAL_TREEBUILD_DIR / SESSION_FILE_NAME
 
 
 class SettingsLevel(Enum):
@@ -39,7 +40,7 @@ class TreeBuildSettings(BaseSettings):
         env_prefix=ENV_PREFIX,
     )
 
-    session_file: Path = GLOBAL_TREEBUILD_DIR / SESSION_FILE_NAME
+    session_file: Path = GLOBAL_SESSION_PATH
     renderer: RenderMethod = RenderMethod.PLAIN
 
     @classmethod
