@@ -1,32 +1,31 @@
-"""Let Pydantic-settings take care of loading settings from ~/.config/treebuild/config.toml"""
+"""Let Pydantic-settings take care of loading settings from ~/.config/treebuild/config.YAML"""
 
-import tomllib
-from enum import Enum, auto
+from enum import StrEnum, auto
 from pathlib import Path
 from typing import Any
 
-import tomli_w
+import yaml
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
-    TomlConfigSettingsSource,
+    YamlConfigSettingsSource,
 )
 
 from treebuild.harvest.render_factory import RenderMethod
 
-TOML = dict[str, Any]
+Serialized = dict[str, Any]
 ENV_PREFIX = "TREEBUILD_"
 GLOBAL_TREEBUILD_DIR = Path().home() / ".config" / "treebuild"
 LOCAL_TREEBUILD_DIR = Path(".treebuild/")
 SESSION_FILE_NAME = "tree.txt"
-SETTINGS_FILE_NAME = "settings.toml"
+SETTINGS_FILE_NAME = "settings.yaml"
 GLOBAL_SETTINGS_PATH = GLOBAL_TREEBUILD_DIR / SETTINGS_FILE_NAME
 LOCAL_SETTINGS_PATH = LOCAL_TREEBUILD_DIR / SETTINGS_FILE_NAME
 GLOBAL_SESSION_PATH = GLOBAL_TREEBUILD_DIR / SESSION_FILE_NAME
 
 
-class SettingsLevel(Enum):
+class SettingsLevel(StrEnum):
     LOCAL = auto()
     GLOBAL = auto()
 
@@ -36,7 +35,7 @@ class TreeBuildSettings(BaseSettings):
     """Default settings"""
 
     model_config = SettingsConfigDict(
-        toml_file=GLOBAL_SETTINGS_PATH,
+        yaml_file=GLOBAL_SETTINGS_PATH,
         env_prefix=ENV_PREFIX,
     )
 
@@ -56,8 +55,8 @@ class TreeBuildSettings(BaseSettings):
         Priority of loading variables
 
         1. Constructor (TreeBuildSettings(key=value), aka the __init__() method)
-        2. Global config TOML file (~/.config/treebuild/settings.toml)
-        3. Local config TOML file (<root>/.config/treebuild/settings.toml)
+        2. Global config YAML file (~/.config/treebuild/settings.YAML)
+        3. Local config YAML file (<root>/.config/treebuild/settings.YAML)
         4. Environment variables (so you can 'env export variables' in terminal or `.zshrc`-like file)
 
         ---
@@ -66,10 +65,10 @@ class TreeBuildSettings(BaseSettings):
 
         return (
             init_settings,
-            TomlConfigSettingsSource(settings_cls, toml_file=GLOBAL_SETTINGS_PATH),
-            TomlConfigSettingsSource(
+            YamlConfigSettingsSource(settings_cls, yaml_file=GLOBAL_SETTINGS_PATH),
+            YamlConfigSettingsSource(
                 settings_cls,
-                toml_file=LOCAL_SETTINGS_PATH if LOCAL_SETTINGS_PATH else None,
+                yaml_file=LOCAL_SETTINGS_PATH if LOCAL_SETTINGS_PATH else None,
             ),
             env_settings,
         )
@@ -80,15 +79,18 @@ def get_settings() -> TreeBuildSettings:
     return TreeBuildSettings()
 
 
-# handling TOML files
-def write_settings(settings: TOML, file: Path) -> None:
+# handling YAML files
+def write_settings(settings: Serialized, file: Path) -> None:
     """Save settings to file."""
-    file.write_bytes(tomli_w.dumps(settings).encode())
+    with file.open("w") as f:
+        yaml.dump(settings, f)
 
 
-def load_settings(file: Path) -> TOML:
+def load_settings(file: Path) -> Serialized:
     """Load settings from given file."""
-    return tomllib.loads(file.read_text())
+    with file.open("r") as f:
+        settings = yaml.safe_load(f)
+    return settings
 
 
 # Resolving file paths
