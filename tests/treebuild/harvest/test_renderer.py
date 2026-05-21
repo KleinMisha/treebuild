@@ -1,4 +1,4 @@
-"""Unit tests for src/treebuild/creation/renderer.py"""
+"""Unit tests for src/treebuild/harvest/renderer.py"""
 
 from unittest.mock import Mock
 
