@@ -4,6 +4,7 @@ from typing import Annotated
 
 from typer import Context, Option, Typer, echo
 
+from treebuild.cli.routing.config import config_app
 from treebuild.cli.routing.harvest import harvest_app
 from treebuild.cli.routing.treebuild import app as main_app
 from treebuild.core.logging import setup_logging
@@ -16,6 +17,7 @@ app.add_typer(
     name="harvest",
     help="Use your tree to render text or scaffold on filesystem. ",
 )
+app.add_typer(config_app, name="config", help="Configuration settings.")
 
 
 @app.callback(invoke_without_command=True)
