@@ -10,6 +10,7 @@ from treebuild.core.settings import (
     SESSION_FILE_NAME,
     SETTINGS_FILE_NAME,
     SettingsLevel,
+    load_settings,
     resolve_session_file,
     resolve_settings_file,
     resolve_treebuild_dir,
@@ -121,3 +122,12 @@ def test_resolve_local_existing_session_file(tmp_path: Path) -> None:
 def test_resolve_default_local_session_file(tmp_path: Path) -> None:
     local_file = tmp_path / LOCAL_TREEBUILD_DIR / SESSION_FILE_NAME
     assert resolve_session_file(SettingsLevel.LOCAL, tmp_path) == local_file
+
+
+def test_load_empty_yaml_file(tmp_path: Path) -> None:
+    """If file is empty, still return a dictionary"""
+    file = tmp_path / "empty_settings.yaml"
+    file.touch()
+    settings = load_settings(file)
+    assert isinstance(settings, dict)
+    assert settings == {}

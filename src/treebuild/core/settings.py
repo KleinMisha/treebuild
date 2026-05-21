@@ -90,7 +90,7 @@ def load_settings(file: Path) -> Serialized:
     """Load settings from given file."""
     with file.open("r") as f:
         settings = yaml.safe_load(f)
-    return settings
+    return settings or {}
 
 
 # Resolving file paths
