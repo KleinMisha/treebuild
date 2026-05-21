@@ -4,6 +4,7 @@ from typing import Annotated
 
 from typer import Context, Option, Typer, echo
 
+from treebuild.cli.routing.config import config_app
 from treebuild.cli.routing.harvest import harvest_app
 from treebuild.cli.routing.treebuild import app as main_app
 from treebuild.core.logging import setup_logging
@@ -12,6 +13,7 @@ from treebuild.core.logging import setup_logging
 app = Typer()
 app.add_typer(main_app)
 app.add_typer(harvest_app, name="harvest")
+app.add_typer(config_app, name="config")
 
 
 @app.callback(invoke_without_command=True)
