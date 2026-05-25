@@ -899,3 +899,35 @@ def test_delete_dir_raises_if_does_not_exist_local(tmp_path: Path) -> None:
     )
     assert result.exit_code == 1
     assert result.stdout != ""
+
+
+def test_delete_dir_dry_run_global(
+    with_global_dir: Generator[None, None, None],
+) -> None:
+    runner = CliRunner()
+    result = runner.invoke(
+        app, ["config", "delete-dir", "--level", "global", "--dry-run"]
+    )
+    assert result.exit_code == 0
+    assert str(GLOBAL_TREEBUILD_DIR) in result.stdout
+    assert GLOBAL_TREEBUILD_DIR.exists()
+
+
+def test_delete_dir_dry_run_local(with_local_dir: tuple[Path, Path]) -> None:
+    local_dir, tmp_path = with_local_dir
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "config",
+            "delete-dir",
+            "--level",
+            "local",
+            "--local-dir",
+            str(tmp_path),
+            "--dry-run",
+        ],
+    )
+    assert result.exit_code == 0
+    assert str(local_dir) in result.stdout
+    assert local_dir.exists()

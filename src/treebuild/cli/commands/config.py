@@ -191,10 +191,16 @@ def create_dir_impl(level: SettingsLevel, location: Path) -> None:
     logging.info(f"Created: {str(directory)}")
 
 
-def delete_dir_impl(level: SettingsLevel, location: Path) -> None:
+def delete_dir_impl(
+    level: SettingsLevel, location: Path, dry_run: bool = False
+) -> None:
     """Delete ~/.config/treebuild/ or a local .treebuild/ directory."""
     directory = resolve_treebuild_dir(level, location)
     if not directory.exists():
         raise ConfigError(f"{directory} does not exist.")
+
+    if dry_run:
+        logging.info(f"[DRY-RUN] Would remove: {str(directory)}")
+        return
     rmtree(directory)
     logging.info(f"Removed: {str(directory)}")
