@@ -12,7 +12,7 @@ from treebuild.core.exceptions import (
     SessionAlreadyExistsError,
 )
 from treebuild.storage.settings import get_settings
-from treebuild.storage.session import SessionStore, normalize
+from treebuild.storage.tree_store import TreeStore, normalize
 
 
 def plant_impl(root: Optional[str] = None) -> None:
@@ -32,9 +32,9 @@ def plant_impl(root: Optional[str] = None) -> None:
     session_file.parent.mkdir(parents=True, exist_ok=True)
     session_file.touch()
     logging.info(f"Created new file to store paths added to your tree: {session_file}")
-    session = SessionStore(session_file)
+    session = TreeStore(session_file)
     if root:
-        session = SessionStore(session_file)
+        session = TreeStore(session_file)
         session.write_root(root)
         logging.info(f"Written tree root: {root}")
 
@@ -50,7 +50,7 @@ def status_impl() -> None:
         logging.info(message)
         return
 
-    session = SessionStore(session_file)
+    session = TreeStore(session_file)
     if not (session.has_paths() or session.has_root()):
         message = load_message("status_empty_tree.md")
         logging.info(message)
@@ -86,7 +86,7 @@ def grow_impl(paths: list[str]) -> None:
         raise EmptySessionError(NO_SESSION_MSG)
 
     # Happy path: write into file
-    session = SessionStore(file_path=session_file)
+    session = TreeStore(file_path=session_file)
     for p in paths:
         try:
             session.write_path(p)
@@ -107,7 +107,7 @@ def prune_impl(
         raise EmptySessionError(NO_SESSION_MSG)
 
     # Happy path: Remove paths from the file
-    session = SessionStore(file_path=session_file)
+    session = TreeStore(file_path=session_file)
 
     if not session.has_paths():
         raise EmptySessionError("No paths to remove.")
@@ -134,7 +134,7 @@ def seed_impl(root_name: str, force: bool) -> None:
     if not session_file.exists():
         raise EmptySessionError(NO_SESSION_MSG)
 
-    session = SessionStore(file_path=session_file)
+    session = TreeStore(file_path=session_file)
     if session.has_root() and not force:
         raise RootAlreadySetError(
             f"Your tree already has a root directory name set: {session.read_root()} \n"
@@ -151,7 +151,7 @@ def uproot_impl() -> None:
     if not session_file.exists():
         raise EmptySessionError(NO_SESSION_MSG)
 
-    session = SessionStore(session_file)
+    session = TreeStore(session_file)
     if not session.has_root():
         raise NoRootSetError("No root to remove")
 
@@ -174,7 +174,7 @@ def replant_impl() -> None:
     session_file = settings.session_file
     if not session_file.exists():
         raise EmptySessionError(NO_SESSION_MSG)
-    session = SessionStore(file_path=session_file)
+    session = TreeStore(file_path=session_file)
     session.clear_file()
     logging.info(f"Reset file: {session_file}")
 
@@ -185,6 +185,6 @@ def chop_impl() -> None:
     session_file = settings.session_file
     if not session_file.exists():
         raise EmptySessionError(NO_SESSION_MSG)
-    session = SessionStore(file_path=session_file)
+    session = TreeStore(file_path=session_file)
     session.delete_file()
     logging.info(f"Deleted file: {session_file}")
