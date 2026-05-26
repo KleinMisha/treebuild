@@ -18,7 +18,7 @@ from treebuild.cli.commands.config import (
     unset_impl,
 )
 from treebuild.core.exceptions import ConfigError
-from treebuild.core.settings import SettingsLevel
+from treebuild.storage.settings import SettingsLevel
 
 config_app = Typer()
 

@@ -10,7 +10,7 @@ from treebuild.core.exceptions import (
     NoRootSetError,
     RootDirNotFoundError,
 )
-from treebuild.core.settings import get_settings
+from treebuild.storage.settings import get_settings
 from treebuild.harvest.materializer import Materializer
 from treebuild.harvest.render_factory import RenderMethod, get_renderer
 from treebuild.storage.session import SessionStore

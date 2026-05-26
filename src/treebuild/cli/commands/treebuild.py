@@ -11,7 +11,7 @@ from treebuild.core.exceptions import (
     RootAlreadySetError,
     SessionAlreadyExistsError,
 )
-from treebuild.core.settings import get_settings
+from treebuild.storage.settings import get_settings
 from treebuild.storage.session import SessionStore, normalize
 
 

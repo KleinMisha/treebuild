@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from treebuild.tree.branches import Branch, Tree
-from treebuild.core.settings import ENV_PREFIX
+from treebuild.storage.settings import ENV_PREFIX
 
 
 @pytest.fixture()

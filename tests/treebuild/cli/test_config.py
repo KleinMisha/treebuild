@@ -6,7 +6,7 @@ from pydantic_core import PydanticUndefined
 from typer.testing import CliRunner
 
 from treebuild.cli.entrypoint import app
-from treebuild.core.settings import (
+from treebuild.storage.settings import (
     GLOBAL_SETTINGS_PATH,
     GLOBAL_TREEBUILD_DIR,
     SESSION_FILE_NAME,

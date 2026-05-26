@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from treebuild.core.settings import (
+from treebuild.storage.settings import (
     GLOBAL_SESSION_PATH,
     GLOBAL_SETTINGS_PATH,
     GLOBAL_TREEBUILD_DIR,

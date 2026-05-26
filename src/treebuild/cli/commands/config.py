@@ -8,7 +8,7 @@ from typing import Any
 from pydantic_core import PydanticUndefined
 
 from treebuild.core.exceptions import ConfigError
-from treebuild.core.settings import (
+from treebuild.storage.settings import (
     SettingsLevel,
     TreeBuildSettings,
     get_settings,
