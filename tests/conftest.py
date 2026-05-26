@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from treebuild.tree.branches import Branch, Tree
 from treebuild.storage.settings import ENV_PREFIX
+from treebuild.tree.branches import Branch, Tree
 
 
 @pytest.fixture()
@@ -17,8 +17,16 @@ def tree() -> Tree:
 
 @pytest.fixture()
 def tree_file(tmp_path: Path) -> Path:
-    """Temporary file for session's state. For unit tests of TreeStore"""
+    """Temporary file for session's tree state. For unit tests of TreeStore"""
     file = tmp_path / "tree.txt"
+    file.touch()
+    return file
+
+
+@pytest.fixture()
+def cache_file(tmp_path: Path) -> Path:
+    """Temporary file for cache. For unit tests of CacheStore"""
+    file = tmp_path / "cache.yaml"
     file.touch()
     return file
 
