@@ -1,4 +1,4 @@
-"""unit tests for src/treebuild/harvest/settings.py"""
+"""unit tests for src/treebuild/storage/settings.py"""
 
 from pathlib import Path
 
