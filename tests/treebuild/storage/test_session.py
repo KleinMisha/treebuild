@@ -1,4 +1,4 @@
-"""Unit tests for src/treebuild/session/session.py"""
+"""Unit tests for src/treebuild/storage/tree_store.py"""
 
 from pathlib import Path
 
@@ -8,12 +8,12 @@ from treebuild.core.exceptions import DuplicatePathError
 from treebuild.storage.tree_store import TreeStore, normalize
 
 
-def test_read_and_write_paths(session_file: Path) -> None:
+def test_read_and_write_paths(tree_file: Path) -> None:
     """Write to a temporary file twice"""
-    session = TreeStore(session_file)
-    session.write_path("/path/to/file")
-    session.write_path("/path/to/another/file")
-    written_paths = session.read_paths()
+    store = TreeStore(tree_file)
+    store.write_path("/path/to/file")
+    store.write_path("/path/to/another/file")
+    written_paths = store.read_paths()
     expected_paths = [
         normalize(fn) for fn in ["/path/to/file", "/path/to/another/file"]
     ]
@@ -21,45 +21,45 @@ def test_read_and_write_paths(session_file: Path) -> None:
     assert set(written_paths) == set(expected_paths)
 
 
-def test_deleting_file(session_file: Path) -> None:
-    """Removing the session's stored data."""
-    session = TreeStore(session_file)
-    session.delete_file()
-    assert not session_file.exists()
+def test_deleting_file(tree_file: Path) -> None:
+    """Removing the store's stored data."""
+    store = TreeStore(tree_file)
+    store.delete_file()
+    assert not tree_file.exists()
 
 
-def test_removing_last_path(session_file: Path) -> None:
+def test_removing_last_path(tree_file: Path) -> None:
     """Remove last entered path."""
-    session = TreeStore(session_file)
-    session.write_path("/first/path/")
-    session.write_path("/second/path/")
-    session.write_path("/third/path/")
-    session.remove_path()
+    store = TreeStore(tree_file)
+    store.write_path("/first/path/")
+    store.write_path("/second/path/")
+    store.write_path("/third/path/")
+    store.remove_path()
     expected_paths = [normalize(fn) for fn in ["/first/path/", "/second/path/"]]
-    stored_paths = session.read_paths()
+    stored_paths = store.read_paths()
     assert set(stored_paths) == set(expected_paths)
 
 
-def test_removing_middle_entry(session_file: Path) -> None:
+def test_removing_middle_entry(tree_file: Path) -> None:
     "Remove second of three paths entered"
-    session = TreeStore(session_file)
-    session.write_path("/first/path/")
-    session.write_path("/second/path/")
-    session.write_path("/third/path/")
-    session.remove_path(entry="/second/path/")
+    store = TreeStore(tree_file)
+    store.write_path("/first/path/")
+    store.write_path("/second/path/")
+    store.write_path("/third/path/")
+    store.remove_path(entry="/second/path/")
     expected_paths = [normalize(fn) for fn in ["/first/path/", "/third/path/"]]
-    stored_paths = session.read_paths()
+    stored_paths = store.read_paths()
     assert set(stored_paths) == set(expected_paths)
 
 
-def test_removing_all_paths(session_file: Path) -> None:
+def test_removing_all_paths(tree_file: Path) -> None:
     """Removing all paths"""
-    session = TreeStore(session_file)
-    session.write_path("/first/path/")
-    session.write_path("/second/path/")
-    session.write_path("/third/path/")
-    session.remove_all_paths()
-    assert session.read_paths() == []
+    store = TreeStore(tree_file)
+    store.write_path("/first/path/")
+    store.write_path("/second/path/")
+    store.write_path("/third/path/")
+    store.remove_all_paths()
+    assert store.read_paths() == []
 
 
 @pytest.mark.parametrize(
@@ -70,20 +70,20 @@ def test_removing_all_paths(session_file: Path) -> None:
         "/first/path ",  # trailing spaces (normalization removes them)
     ],
 )
-def test_cannot_write_duplicate(session_file: Path, duplicate: str) -> None:
+def test_cannot_write_duplicate(tree_file: Path, duplicate: str) -> None:
     """Attempting to write a duplicate path should raise an exception."""
-    session = TreeStore(session_file)
-    session.write_path("/first/path")
+    store = TreeStore(tree_file)
+    store.write_path("/first/path")
     with pytest.raises(DuplicatePathError):
-        session.write_path(duplicate)
+        store.write_path(duplicate)
 
 
-def test_duplicate_first_normalizes_entry(session_file: Path) -> None:
+def test_duplicate_first_normalizes_entry(tree_file: Path) -> None:
     """Attempt to write the same path, but the second time you omit the trailing slash."""
-    session = TreeStore(session_file)
-    session.write_path("/first/path")
+    store = TreeStore(tree_file)
+    store.write_path("/first/path")
     with pytest.raises(DuplicatePathError):
-        session.write_path("/first/path")
+        store.write_path("/first/path")
 
 
 @pytest.mark.parametrize(
@@ -93,174 +93,172 @@ def test_duplicate_first_normalizes_entry(session_file: Path) -> None:
         "path/to/root/dir",  # use slashes in name
     ],
 )
-def test_read_and_write_root(session_file: Path, root_name: str) -> None:
+def test_read_and_write_root(tree_file: Path, root_name: str) -> None:
     """Write root name to file and retrieve it."""
-    session = TreeStore(session_file)
-    session.write_root(root_name)
-    assert session.read_root() == root_name
+    store = TreeStore(tree_file)
+    store.write_root(root_name)
+    assert store.read_root() == root_name
 
 
-def test_has_a_root(session_file: Path) -> None:
+def test_has_a_root(tree_file: Path) -> None:
     """Set the root, should return True"""
-    session = TreeStore(session_file)
-    session.write_root("root")
-    assert session.has_root()
+    store = TreeStore(tree_file)
+    store.write_root("root")
+    assert store.has_root()
 
 
-def test_has_no_root(session_file: Path) -> None:
+def test_has_no_root(tree_file: Path) -> None:
     """Only write paths, or add root, then remove, should not have a root in the file"""
-    session = TreeStore(session_file)
-    session.write_path("path/to/file")
-    session.write_path("/path/to/another/file")
-    assert not session.has_root()
+    store = TreeStore(tree_file)
+    store.write_path("path/to/file")
+    store.write_path("/path/to/another/file")
+    assert not store.has_root()
 
 
-def test_remove_root(session_file: Path) -> None:
+def test_remove_root(tree_file: Path) -> None:
     """Write, remove, then read (the now non-existing) root name."""
-    session = TreeStore(session_file)
-    session.write_root("root")
-    session.remove_root()
-    assert session.read_root() is None
-    assert not session.has_root()
+    store = TreeStore(tree_file)
+    store.write_root("root")
+    store.remove_root()
+    assert store.read_root() is None
+    assert not store.has_root()
 
 
-def test_has_paths(session_file: Path) -> None:
+def test_has_paths(tree_file: Path) -> None:
     """Should return True if at least one path is set."""
-    session = TreeStore(session_file)
-    session.write_path("a/valid/path")
-    assert session.has_paths()
+    store = TreeStore(tree_file)
+    store.write_path("a/valid/path")
+    assert store.has_paths()
 
 
-def test_has_no_paths(session_file: Path) -> None:
+def test_has_no_paths(tree_file: Path) -> None:
     """
     1. Only write a root to the file, should have no paths
     2. Write path(s), then remove them, should have no paths
     """
     # 1. Set a root, should not influence check for paths in file
-    session = TreeStore(session_file)
-    session.write_root("root")
-    assert not session.has_paths()
+    store = TreeStore(tree_file)
+    store.write_root("root")
+    assert not store.has_paths()
 
     # 2. Removing all paths after adding some, should result in check failing
-    session.write_path("a/valid/path")
-    session.write_path("another_valid.path")
-    session.remove_all_paths()
-    assert not session.has_paths()
+    store.write_path("a/valid/path")
+    store.write_path("another_valid.path")
+    store.remove_all_paths()
+    assert not store.has_paths()
 
 
-def test_remove_path_preserves_root(session_file: Path) -> None:
+def test_remove_path_preserves_root(tree_file: Path) -> None:
     """Correctly get back root name after removing a specific leaf or branch."""
-    session = TreeStore(session_file)
-    session.write_root("root")
-    session.write_path("a/valid/path")
-    session.write_path("another_valid.path")
-    session.remove_path("another_valid.path")
-    assert session.read_root() == "root"
+    store = TreeStore(tree_file)
+    store.write_root("root")
+    store.write_path("a/valid/path")
+    store.write_path("another_valid.path")
+    store.remove_path("another_valid.path")
+    assert store.read_root() == "root"
 
 
-def test_remove_all_paths_preserves_root(session_file: Path) -> None:
+def test_remove_all_paths_preserves_root(tree_file: Path) -> None:
     """Correctly get back root name after removing all other leaves and branches."""
-    session = TreeStore(session_file)
-    session.write_root("root")
-    session.write_path("a/valid/path")
-    session.write_path("another_valid.path")
-    session.remove_all_paths()
-    assert session.read_root() == "root"
+    store = TreeStore(tree_file)
+    store.write_root("root")
+    store.write_path("a/valid/path")
+    store.write_path("another_valid.path")
+    store.remove_all_paths()
+    assert store.read_root() == "root"
 
 
-def test_remove_root_preserves_paths(session_file: Path) -> None:
+def test_remove_root_preserves_paths(tree_file: Path) -> None:
     """Correctly get back all other leaves and branches (paths) after removing the root name."""
-    session = TreeStore(session_file)
-    session.write_root("root")
-    session.write_path("a/valid/path")
-    session.write_path("another_valid.path")
-    session.remove_root()
-    assert set(session.read_paths()) == set(["a/valid/path", "another_valid.path"])
+    store = TreeStore(tree_file)
+    store.write_root("root")
+    store.write_path("a/valid/path")
+    store.write_path("another_valid.path")
+    store.remove_root()
+    assert set(store.read_paths()) == set(["a/valid/path", "another_valid.path"])
 
 
-def test_read_and_write(session_file: Path) -> None:
+def test_read_and_write(tree_file: Path) -> None:
     """Write both paths and root name"""
     root_name = "root"
     paths = ["/path/to/file", "/path/to/another/file"]
-    session = TreeStore(session_file)
-    session.write_root(root_name)
+    store = TreeStore(tree_file)
+    store.write_root(root_name)
     for p in paths:
-        session.write_path(p)
+        store.write_path(p)
 
-    assert set(session.read_paths()) == set([normalize(p) for p in paths])
-    assert session.read_root() == root_name
+    assert set(store.read_paths()) == set([normalize(p) for p in paths])
+    assert store.read_root() == root_name
 
 
-def test_write_and_clear(session_file: Path) -> None:
+def test_write_and_clear(tree_file: Path) -> None:
     """Write to file and clear contents"""
-    session = TreeStore(session_file)
-    session.write_path("/path/to/file")
-    session.write_path("/path/to/another/file")
-    session.write_root("root")
-    session.clear_file()
-    assert (not session.has_paths()) and (not session.has_root())
+    store = TreeStore(tree_file)
+    store.write_path("/path/to/file")
+    store.write_path("/path/to/another/file")
+    store.write_root("root")
+    store.clear_file()
+    assert (not store.has_paths()) and (not store.has_root())
 
 
-def test_normalization_preserves_trailing_slash(session_file: Path) -> None:
-    """Entering a path as `folder/` should be interpreted as a directory, so session should preserve this trailing slash."""
-    session = TreeStore(session_file)
-    session.write_path("/path/to/dir/")
-    assert "path/to/dir/" in session.read_paths()
+def test_normalization_preserves_trailing_slash(tree_file: Path) -> None:
+    """Entering a path as `folder/` should be interpreted as a directory, so store should preserve this trailing slash."""
+    store = TreeStore(tree_file)
+    store.write_path("/path/to/dir/")
+    assert "path/to/dir/" in store.read_paths()
 
 
-def test_trailing_slash_not_counted_as_duplicate(session_file: Path) -> None:
+def test_trailing_slash_not_counted_as_duplicate(tree_file: Path) -> None:
     """some/path/ and some/path should be treated differently"""
-    session = TreeStore(session_file)
-    session.write_path("/some/path/")
-    session.write_path("/some/path")
-    assert len(session.read_paths()) == 2
+    store = TreeStore(tree_file)
+    store.write_path("/some/path/")
+    store.write_path("/some/path")
+    assert len(store.read_paths()) == 2
 
 
-def test_adding_items_to_empty_dir(session_file: Path) -> None:
+def test_adding_items_to_empty_dir(tree_file: Path) -> None:
     """Adding a file to an initially empty directory should remove the now redundant path to the empty directory."""
-    session = TreeStore(session_file)
-    session.write_path("/empty_dir/")
-    session.write_path("empty_dir/no_longer.txt")
-    assert session.read_paths() == ["empty_dir/no_longer.txt"]
+    store = TreeStore(tree_file)
+    store.write_path("/empty_dir/")
+    store.write_path("empty_dir/no_longer.txt")
+    assert store.read_paths() == ["empty_dir/no_longer.txt"]
 
 
 def test_adding_items_to_grandchild_makes_existing_dir_redundant(
-    session_file: Path,
+    tree_file: Path,
 ) -> None:
     """Adding path/, then add path/to/some/file.py, should eliminate the first entry as it has now become redundant."""
-    session = TreeStore(session_file)
-    session.write_path("path/")
-    session.write_path("path/to/some/file.py")
-    assert session.read_paths() == ["path/to/some/file.py"]
+    store = TreeStore(tree_file)
+    store.write_path("path/")
+    store.write_path("path/to/some/file.py")
+    assert store.read_paths() == ["path/to/some/file.py"]
 
 
-def test_adding_a_file_removes_multiple_redundant_ancestors(session_file: Path) -> None:
+def test_adding_a_file_removes_multiple_redundant_ancestors(tree_file: Path) -> None:
     """If grandchild is added, then child and parent cannot be an empty directory anymore."""
-    session = TreeStore(session_file)
-    session.write_path("path/")
-    session.write_path("path/to/")
-    session.write_path("path/to/file.md")
-    assert session.read_paths() == ["path/to/file.md"]
+    store = TreeStore(tree_file)
+    store.write_path("path/")
+    store.write_path("path/to/")
+    store.write_path("path/to/file.md")
+    assert store.read_paths() == ["path/to/file.md"]
 
 
-def test_rejecting_redundant_dirname(session_file: Path) -> None:
+def test_rejecting_redundant_dirname(tree_file: Path) -> None:
     """Adding a parent directory to an already added path should reject the new entry."""
-    session = TreeStore(session_file)
-    session.write_path("path/to/file.txt")
+    store = TreeStore(tree_file)
+    store.write_path("path/to/file.txt")
     # test with parent
     with pytest.raises(DuplicatePathError):
-        session.write_path("path/to/")
+        store.write_path("path/to/")
     # test with grandparent
     with pytest.raises(DuplicatePathError):
-        session.write_path("path/")
+        store.write_path("path/")
 
 
-def test_adding_file_to_empty_dir_keeps_siblings(session_file: Path) -> None:
+def test_adding_file_to_empty_dir_keeps_siblings(tree_file: Path) -> None:
     """Check sibling directories are not removed by accident"""
-    session = TreeStore(session_file)
-    session.write_path("parent/child/")
-    session.write_path("parent/sibling/")
-    session.write_path("parent/child/file.bla")
-    assert set(session.read_paths()) == set(
-        ["parent/child/file.bla", "parent/sibling/"]
-    )
+    store = TreeStore(tree_file)
+    store.write_path("parent/child/")
+    store.write_path("parent/sibling/")
+    store.write_path("parent/child/file.bla")
+    assert set(store.read_paths()) == set(["parent/child/file.bla", "parent/sibling/"])

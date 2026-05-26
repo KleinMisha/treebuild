@@ -17,10 +17,10 @@ from treebuild.cli.commands.treebuild import (
 )
 from treebuild.cli.walkthrough import interactive_demo, interrupt_demo, quickstart_impl
 from treebuild.core.exceptions import (
-    EmptySessionError,
+    EmptyTreeError,
     NoRootSetError,
     RootAlreadySetError,
-    SessionAlreadyExistsError,
+    TreeAlreadyExistsError,
     TreeBuildError,
 )
 
@@ -48,7 +48,7 @@ def quickstart() -> None:
         quickstart_impl()
         raise Exit(code=0)
     except Abort:
-        echo("\n Interrupting the quickstart setup. Your session is saved.")
+        echo("\n Interrupting the quickstart setup. Your tree is saved.")
         raise Exit(code=0)
     except TreeBuildError as e:
         logging.error(f"{type(e).__name__}:{str(e)}")
@@ -57,7 +57,7 @@ def quickstart() -> None:
 
 @app.command()
 def status() -> None:
-    """Display current paths stored in session."""
+    """Display current paths stored in tree."""
     status_impl()
     raise Exit(code=0)
 
@@ -72,7 +72,7 @@ def plant(
     try:
         plant_impl(root)
         raise Exit(code=0)
-    except SessionAlreadyExistsError as e:
+    except TreeAlreadyExistsError as e:
         logging.error(f"{type(e).__name__}:{str(e)}")
         raise Exit(code=1)
 
@@ -81,11 +81,11 @@ def plant(
 def grow(
     paths: list[str] = Argument(help="Paths to be added as nodes to the tree."),
 ) -> None:
-    """Add (a) path(s) to the current session's tree."""
+    """Add (a) path(s) to the current tree."""
     try:
         grow_impl(paths)
         raise Exit(code=0)
-    except EmptySessionError as e:
+    except EmptyTreeError as e:
         logging.error(f"{type(e).__name__}:{str(e)}")
         raise Exit(code=1)
 
@@ -94,13 +94,13 @@ def grow(
 def prune(
     paths: Annotated[
         Optional[list[str]],
-        Argument(help="Path(s) to remove from current session's tree."),
+        Argument(help="Path(s) to remove from current tree."),
     ] = None,
     remove_all: Annotated[
-        bool, Option("--all", "-a", help="remove all paths from current session.")
+        bool, Option("--all", "-a", help="remove all paths from current tree.")
     ] = False,
 ) -> None:
-    """Remove (a) path(s) to the current session's tree."""
+    """Remove (a) path(s) to the current tree."""
 
     # Improper call to the command.
     if not (paths or remove_all):
@@ -113,7 +113,7 @@ def prune(
     try:
         prune_impl(paths, remove_all)
         raise Exit(code=0)
-    except EmptySessionError as e:
+    except EmptyTreeError as e:
         logging.error(f"{type(e).__name__} : {str(e)}")
         raise Exit(code=1)
 
@@ -129,7 +129,7 @@ def seed(
     try:
         seed_impl(root_name, force)
         raise Exit(code=0)
-    except (EmptySessionError, RootAlreadySetError) as e:
+    except (EmptyTreeError, RootAlreadySetError) as e:
         logging.error(f"{type(e).__name__} : {str(e)}")
         raise Exit(code=1)
 
@@ -140,7 +140,7 @@ def uproot() -> None:
     try:
         uproot_impl()
         raise Exit(code=0)
-    except (EmptySessionError, NoRootSetError) as e:
+    except (EmptyTreeError, NoRootSetError) as e:
         logging.error(f"{type(e).__name__} : {str(e)}")
         raise Exit(code=1)
 
@@ -159,17 +159,17 @@ def replant() -> None:
     try:
         replant_impl()
         raise Exit(code=0)
-    except EmptySessionError as e:
+    except EmptyTreeError as e:
         logging.error(f"{type(e).__name__} : {str(e)}")
         raise Exit(code=1)
 
 
 @app.command()
 def chop() -> None:
-    """Delete the tree (including the file with session's data)."""
+    """Delete the tree (including the file with tree's data)."""
     try:
         chop_impl()
         raise Exit(code=0)
-    except EmptySessionError as e:
+    except EmptyTreeError as e:
         logging.error(f"{type(e).__name__} : {str(e)}")
         raise Exit(code=1)

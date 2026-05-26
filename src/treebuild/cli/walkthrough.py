@@ -19,10 +19,10 @@ from treebuild.cli.commands.treebuild import (
 )
 from treebuild.cli.helpers import load_message
 from treebuild.core.exceptions import (
-    EmptySessionError,
+    EmptyTreeError,
     NoRootSetError,
     RootDirNotFoundError,
-    SessionAlreadyExistsError,
+    TreeAlreadyExistsError,
 )
 from treebuild.harvest.render_factory import RenderMethod
 
@@ -226,14 +226,14 @@ def interrupt_demo() -> None:
     try:
         teardown_impl()
         echo("✓ Done.")
-    except (NoRootSetError, RootDirNotFoundError, EmptySessionError):
+    except (NoRootSetError, RootDirNotFoundError, EmptyTreeError):
         echo("✓ No files materialized, no cleanup needed. ")
 
-    echo("Removing the created session store...")
+    echo("Removing the created tree store...")
     try:
         chop_impl()
         echo("✓ Done.")
-    except EmptySessionError:
+    except EmptyTreeError:
         echo("No cleanup needed.")
         return
 
@@ -251,7 +251,7 @@ def quickstart_impl() -> None:
     root_name = prompt("Name your project's root (directory): ")
     try:
         plant_impl()
-    except SessionAlreadyExistsError:
+    except TreeAlreadyExistsError:
         echo("Clearing your ongoing tree.")
         replant_impl()
 

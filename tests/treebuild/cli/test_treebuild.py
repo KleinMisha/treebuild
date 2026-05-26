@@ -27,7 +27,7 @@ DEMO_YES_QUICKSTART = CORRECT_DEMO_INPUTS + ["y"]
 
 # --- treebuild demo ---
 def test_demo_run_until_completion(empty_session: tuple[Path, dict[str, str]]) -> None:
-    """Go through the full demo, make sure your state (the session file etc.) no longer exist afterwards."""
+    """Go through the full demo, make sure your state (the tree file etc.) no longer exist afterwards."""
     file, environment = empty_session
     runner = CliRunner(env=environment)
     result = runner.invoke(app, ["demo"], input="\n".join(DEMO_NO_QUICKSTART))
@@ -225,8 +225,8 @@ def test_quickstart_clears_existing_session(
     assert result.exit_code == 0
 
     # check that session was cleared
-    session = TreeStore(file)
-    assert session.read_paths() == []
+    store = TreeStore(file)
+    assert store.read_paths() == []
 
     # check if rendering is not in output
     builder = TreeBuilder("root", paths=["some_file.txt", "root/dirname/"])
@@ -404,7 +404,7 @@ def test_status_both_nodes_and_root(
 
 
 # --- treebuild plant ---
-def test_plant_creates_new_session_file(
+def test_plant_creates_new_tree_file(
     empty_session: tuple[Path, dict[str, str]],
 ) -> None:
     """Call it when session (file) does not exist yet."""
@@ -424,8 +424,8 @@ def test_plant_set_root(empty_session: tuple[Path, dict[str, str]]) -> None:
     result = runner.invoke(app, ["plant", "--root", root_name])
     assert result.exit_code == 0
 
-    session = TreeStore(file)
-    assert session.read_root() == root_name
+    store = TreeStore(file)
+    assert store.read_root() == root_name
     assert result.stdout != ""
 
 
@@ -436,8 +436,8 @@ def test_plant_fails_if_root_already_set(
     root_name = "my-root-dir"
     file, environment = empty_session
     # already add the root
-    session = TreeStore(file)
-    session.write_root(root_name)
+    store = TreeStore(file)
+    store.write_root(root_name)
 
     # An invocation of treebuild plant should fail
     runner = CliRunner(env=environment)
@@ -453,8 +453,8 @@ def test_plant_fails_if_nodes_already_added(
     leaf_name = "some.file"
     file, environment = empty_session
     # already add the file
-    session = TreeStore(file)
-    session.write_path(leaf_name)
+    store = TreeStore(file)
+    store.write_path(leaf_name)
 
     # An invocation of treebuild plant should fail
     runner = CliRunner(env=environment)
@@ -477,8 +477,8 @@ def test_grow_single_path(
     assert result.exit_code == 0
     assert result.stdout != ""
 
-    session = TreeStore(file)
-    assert set(session.read_paths()) == set([normalize(path_name)])
+    store = TreeStore(file)
+    assert set(store.read_paths()) == set([normalize(path_name)])
 
 
 def test_grow_multiple_paths(active_session: tuple[Path, dict[str, str]]) -> None:
@@ -490,8 +490,8 @@ def test_grow_multiple_paths(active_session: tuple[Path, dict[str, str]]) -> Non
     assert result.exit_code == 0
     assert result.stdout != ""
 
-    session = TreeStore(file)
-    assert set(session.read_paths()) == set([normalize(p) for p in paths_to_add])
+    store = TreeStore(file)
+    assert set(store.read_paths()) == set([normalize(p) for p in paths_to_add])
 
 
 def test_grow_skips_duplicates(active_session: tuple[Path, dict[str, str]]) -> None:
@@ -512,9 +512,9 @@ def test_grow_skips_duplicates(active_session: tuple[Path, dict[str, str]]) -> N
     # check that regardless of skipping it, the user gets updated something happened with their entry
     assert all(normalize(name) in result.stdout for name in duplicates)
 
-    session = TreeStore(file)
-    assert set(session.read_paths()) == set([normalize(p) for p in unique])
-    assert all(session.read_paths().count(normalize(name)) == 1 for name in unique)
+    store = TreeStore(file)
+    assert set(store.read_paths()) == set([normalize(p) for p in unique])
+    assert all(store.read_paths().count(normalize(name)) == 1 for name in unique)
 
 
 def test_grow_skips_redundant(active_session: tuple[Path, dict[str, str]]) -> None:
@@ -527,8 +527,8 @@ def test_grow_skips_redundant(active_session: tuple[Path, dict[str, str]]) -> No
     # check that regardless of skipping it, the user gets updated something happened with their entry
     assert all(normalize(name) in result.stdout for name in incl_redundant)
 
-    session = TreeStore(file)
-    assert set(session.read_paths()) == set([normalize(p) for p in merged_paths])
+    store = TreeStore(file)
+    assert set(store.read_paths()) == set([normalize(p) for p in merged_paths])
 
 
 def test_grow_removes_redundant_parents(
@@ -543,8 +543,8 @@ def test_grow_removes_redundant_parents(
     # check that regardless of skipping it, the user gets updated something happened with their entry
     assert all(normalize(name) in result.stdout for name in incl_redundant)
 
-    session = TreeStore(file)
-    assert set(session.read_paths()) == set([normalize(p) for p in merged_paths])
+    store = TreeStore(file)
+    assert set(store.read_paths()) == set([normalize(p) for p in merged_paths])
 
 
 def test_grow_siblings_unaffected(active_session: tuple[Path, dict[str, str]]) -> None:
@@ -553,9 +553,9 @@ def test_grow_siblings_unaffected(active_session: tuple[Path, dict[str, str]]) -
     file, environment = active_session
     runner = CliRunner(env=environment)
     result = runner.invoke(app, ["grow"] + paths_to_add)
-    session = TreeStore(file)
+    store = TreeStore(file)
     assert all(normalize(name) in result.stdout for name in paths_to_add)
-    assert set(session.read_paths()) == set(
+    assert set(store.read_paths()) == set(
         [normalize(p) for p in ["parent/child/file.txt", "parent/sibling/"]]
     )
 
@@ -571,8 +571,8 @@ def test_prune_after_grow(active_session: tuple[Path, dict[str, str]]) -> None:
     assert result.exit_code == 0
     assert result.stdout != ""
 
-    session = TreeStore(file)
-    assert session.read_paths() == []
+    store = TreeStore(file)
+    assert store.read_paths() == []
 
 
 @pytest.mark.parametrize(
@@ -590,9 +590,9 @@ def test_prune_specific_path(
     assert result.exit_code == 0
     assert result.stdout != ""
 
-    session = TreeStore(file)
-    assert len(session.read_paths()) == len(paths_added) - 1
-    assert normalize(path_to_remove) not in session.read_paths()
+    store = TreeStore(file)
+    assert len(store.read_paths()) == len(paths_added) - 1
+    assert normalize(path_to_remove) not in store.read_paths()
 
 
 def test_prune_all(active_session: tuple[Path, dict[str, str]]) -> None:
@@ -605,8 +605,8 @@ def test_prune_all(active_session: tuple[Path, dict[str, str]]) -> None:
     assert result.exit_code == 0
     assert result.stdout != ""
 
-    session = TreeStore(file)
-    assert session.read_paths() == []
+    store = TreeStore(file)
+    assert store.read_paths() == []
 
 
 def test_cannot_prune_before_grow(active_session: tuple[Path, dict[str, str]]) -> None:
@@ -629,8 +629,8 @@ def test_prune_multiple(active_session: tuple[Path, dict[str, str]]) -> None:
     assert result.exit_code == 0
     assert result.stdout != ""
 
-    session = TreeStore(file)
-    assert set(session.read_paths()) == set([normalize(paths_added[0])])
+    store = TreeStore(file)
+    assert set(store.read_paths()) == set([normalize(paths_added[0])])
 
 
 def test_prune_skips_not_found_paths(
@@ -647,8 +647,8 @@ def test_prune_skips_not_found_paths(
     assert result.exit_code == 0
     assert result.stdout != ""
 
-    session = TreeStore(file)
-    assert set(session.read_paths()) == set([normalize(p) for p in paths_added[1:]])
+    store = TreeStore(file)
+    assert set(store.read_paths()) == set([normalize(p) for p in paths_added[1:]])
 
 
 def test_prune_needs_path_or_all_flag(
@@ -672,8 +672,8 @@ def test_seed(active_session: tuple[Path, dict[str, str]]) -> None:
     assert result.exit_code == 0
     assert result.stdout != ""
 
-    session = TreeStore(file)
-    assert session.read_root() == root_name
+    store = TreeStore(file)
+    assert store.read_root() == root_name
 
 
 def test_exit_if_root_already_set(active_session: tuple[Path, dict[str, str]]) -> None:
@@ -687,8 +687,8 @@ def test_exit_if_root_already_set(active_session: tuple[Path, dict[str, str]]) -
     assert result.exit_code == 1
     assert result.stdout != ""
 
-    session = TreeStore(file)
-    assert session.read_root() == before
+    store = TreeStore(file)
+    assert store.read_root() == before
 
 
 def test_force_rename_root(active_session: tuple[Path, dict[str, str]]) -> None:
@@ -702,8 +702,8 @@ def test_force_rename_root(active_session: tuple[Path, dict[str, str]]) -> None:
     assert result.exit_code == 0
     assert result.stdout != ""
 
-    session = TreeStore(file)
-    assert session.read_root() == after
+    store = TreeStore(file)
+    assert store.read_root() == after
 
 
 # --- treebuild uproot ---
@@ -717,8 +717,8 @@ def test_uproot(active_session: tuple[Path, dict[str, str]]) -> None:
     assert result.exit_code == 0
     assert result.stdout != ""
 
-    session = TreeStore(file)
-    assert not session.has_root()
+    store = TreeStore(file)
+    assert not store.has_root()
 
 
 def test_cannot_uproot_if_not_seeded(
@@ -744,9 +744,9 @@ def test_replant(active_session: tuple[Path, dict[str, str]]) -> None:
     assert result.stdout != ""
 
     assert file.exists()
-    session = TreeStore(file)
-    assert not session.has_paths()
-    assert not session.has_root()
+    store = TreeStore(file)
+    assert not store.has_paths()
+    assert not store.has_root()
 
 
 # --- treebuild chop ---

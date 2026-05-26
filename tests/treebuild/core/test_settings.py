@@ -3,16 +3,16 @@
 from pathlib import Path
 
 from treebuild.storage.settings import (
-    GLOBAL_SESSION_PATH,
     GLOBAL_SETTINGS_PATH,
+    GLOBAL_TREE_PATH,
     GLOBAL_TREEBUILD_DIR,
     LOCAL_TREEBUILD_DIR,
-    SESSION_FILE_NAME,
     SETTINGS_FILE_NAME,
+    TREE_FILE_NAME,
     SettingsLevel,
     load_settings,
-    resolve_session_file,
     resolve_settings_file,
+    resolve_tree_file,
     resolve_treebuild_dir,
 )
 
@@ -104,24 +104,24 @@ def test_resolve_default_local_settings_file(tmp_path: Path) -> None:
     assert resolve_settings_file(SettingsLevel.LOCAL, tmp_path) == local_file
 
 
-def test_resolve_global_session_file() -> None:
+def test_resolve_global_tree_file() -> None:
     assert (
-        resolve_session_file(SettingsLevel.GLOBAL, Path("does/not/matter"))
-        == GLOBAL_SESSION_PATH
+        resolve_tree_file(SettingsLevel.GLOBAL, Path("does/not/matter"))
+        == GLOBAL_TREE_PATH
     )
 
 
-def test_resolve_local_existing_session_file(tmp_path: Path) -> None:
+def test_resolve_local_existing_tree_file(tmp_path: Path) -> None:
     local_dir = tmp_path / ".treebuild/"
-    local_file = local_dir / SESSION_FILE_NAME
+    local_file = local_dir / TREE_FILE_NAME
     local_dir.mkdir(exist_ok=True)
     local_file.touch()
-    assert resolve_session_file(SettingsLevel.LOCAL, tmp_path) == local_file
+    assert resolve_tree_file(SettingsLevel.LOCAL, tmp_path) == local_file
 
 
-def test_resolve_default_local_session_file(tmp_path: Path) -> None:
-    local_file = tmp_path / LOCAL_TREEBUILD_DIR / SESSION_FILE_NAME
-    assert resolve_session_file(SettingsLevel.LOCAL, tmp_path) == local_file
+def test_resolve_default_local_tree_file(tmp_path: Path) -> None:
+    local_file = tmp_path / LOCAL_TREEBUILD_DIR / TREE_FILE_NAME
+    assert resolve_tree_file(SettingsLevel.LOCAL, tmp_path) == local_file
 
 
 def test_load_empty_yaml_file(tmp_path: Path) -> None:

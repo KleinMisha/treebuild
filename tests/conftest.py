@@ -16,9 +16,9 @@ def tree() -> Tree:
 
 
 @pytest.fixture()
-def session_file(tmp_path: Path) -> Path:
-    """Temporary file for session's state. For unit tests of SessionStore"""
-    file = tmp_path / "session.txt"
+def tree_file(tmp_path: Path) -> Path:
+    """Temporary file for session's state. For unit tests of TreeStore"""
+    file = tmp_path / "tree.txt"
     file.touch()
     return file
 
@@ -28,21 +28,21 @@ def empty_session(tmp_path: Path) -> tuple[Path, dict[str, str]]:
     """
     A session using a temporary file (not yet created), for tests of CLI commands.
     """
-    session_file = tmp_path / "session.txt"
-    env = {f"{ENV_PREFIX}SESSION_FILE": str(session_file)}
-    return session_file, env
+    tree_file = tmp_path / "tree.txt"
+    env = {f"{ENV_PREFIX}TREE_FILE": str(tree_file)}
+    return tree_file, env
 
 
 @pytest.fixture()
 def active_session(tmp_path: Path) -> tuple[Path, dict[str, str]]:
     """
-    A session with session-file created.
+    A session with tree store created.
     For (unit) tests of CLI commands requiring a file to exist.
     """
-    session_file = tmp_path / "session.txt"
-    session_file.touch()
-    env = {f"{ENV_PREFIX}SESSION_FILE": str(session_file)}
-    return session_file, env
+    tree_file = tmp_path / "tree.txt"
+    tree_file.touch()
+    env = {f"{ENV_PREFIX}TREE_FILE": str(tree_file)}
+    return tree_file, env
 
 
 def assert_strings_equal(actual: str, expected: str) -> None:

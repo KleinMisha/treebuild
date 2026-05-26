@@ -18,11 +18,11 @@ Serialized = dict[str, Any]
 ENV_PREFIX = "TREEBUILD_"
 GLOBAL_TREEBUILD_DIR = Path().home() / ".config" / "treebuild"
 LOCAL_TREEBUILD_DIR = Path(".treebuild/")
-SESSION_FILE_NAME = "tree.txt"
+TREE_FILE_NAME = "tree.txt"
 SETTINGS_FILE_NAME = "settings.yaml"
 GLOBAL_SETTINGS_PATH = GLOBAL_TREEBUILD_DIR / SETTINGS_FILE_NAME
-LOCAL_SETTINGS_PATH = LOCAL_TREEBUILD_DIR / SETTINGS_FILE_NAME
-GLOBAL_SESSION_PATH = GLOBAL_TREEBUILD_DIR / SESSION_FILE_NAME
+LOCAL_TREE_PATH = LOCAL_TREEBUILD_DIR / SETTINGS_FILE_NAME
+GLOBAL_TREE_PATH = GLOBAL_TREEBUILD_DIR / TREE_FILE_NAME
 
 
 class SettingsLevel(StrEnum):
@@ -39,7 +39,7 @@ class TreeBuildSettings(BaseSettings):
         env_prefix=ENV_PREFIX,
     )
 
-    session_file: Path = GLOBAL_SESSION_PATH
+    tree_file: Path = GLOBAL_TREE_PATH
     renderer: RenderMethod = RenderMethod.PLAIN
 
     @classmethod
@@ -68,7 +68,7 @@ class TreeBuildSettings(BaseSettings):
             YamlConfigSettingsSource(settings_cls, yaml_file=GLOBAL_SETTINGS_PATH),
             YamlConfigSettingsSource(
                 settings_cls,
-                yaml_file=LOCAL_SETTINGS_PATH if LOCAL_SETTINGS_PATH else None,
+                yaml_file=LOCAL_TREE_PATH if LOCAL_TREE_PATH else None,
             ),
             env_settings,
         )
@@ -98,8 +98,8 @@ def resolve_settings_file(level: SettingsLevel, start_search: Path) -> Path:
     return _resolve_treebuild_file(level, start_search, filename=SETTINGS_FILE_NAME)
 
 
-def resolve_session_file(level: SettingsLevel, start_search: Path) -> Path:
-    return _resolve_treebuild_file(level, start_search, filename=SESSION_FILE_NAME)
+def resolve_tree_file(level: SettingsLevel, start_search: Path) -> Path:
+    return _resolve_treebuild_file(level, start_search, filename=TREE_FILE_NAME)
 
 
 def resolve_treebuild_dir(level: SettingsLevel, start_search: Path) -> Path:

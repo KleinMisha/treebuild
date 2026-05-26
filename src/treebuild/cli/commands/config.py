@@ -13,8 +13,8 @@ from treebuild.storage.settings import (
     TreeBuildSettings,
     get_settings,
     load_settings,
-    resolve_session_file,
     resolve_settings_file,
+    resolve_tree_file,
     resolve_treebuild_dir,
     write_settings,
 )
@@ -58,7 +58,7 @@ def create_impl(level: SettingsLevel, location: Path) -> None:
     Create the .treebuild/settings.yaml
     ---
 
-    Sets the value for the session_file location (.treebuild/settings.yaml)
+    Sets the value for the tree file's location (.treebuild/settings.yaml)
     Other values will equal the global settings.
 
     ---
@@ -79,7 +79,7 @@ def create_impl(level: SettingsLevel, location: Path) -> None:
 
     # create new file
     new_values = (
-        {"session_file": str(resolve_session_file(level, location))}
+        {"tree_file": str(resolve_tree_file(level, location))}
         if level == SettingsLevel.LOCAL
         else {}
     )

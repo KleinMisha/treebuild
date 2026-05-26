@@ -15,7 +15,7 @@ Here's a typical workflow:
 treebuild plant --root myproject
 ```
 
-Starts a fresh session with `myproject` as the root directory.
+Starts a fresh tree with `myproject` as the root directory.
 
 ### 2. Grow the tree
 

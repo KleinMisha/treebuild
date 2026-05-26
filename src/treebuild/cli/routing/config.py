@@ -216,7 +216,7 @@ def create_dir(
         Option("--local-dir", help="Path to where .treebuild/ can be discovered."),
     ] = None,
 ) -> None:
-    """Creates directory for treebuild related files (configuration, session store, etc.)"""
+    """Creates directory for treebuild related files (configuration, tree store, etc.)"""
     try:
         loc_dir = loc or Path.cwd()
         create_dir_impl(level, loc_dir)
@@ -236,7 +236,7 @@ def delete_dir(
         Option("--local-dir", help="Path to where .treebuild/ can be discovered."),
     ] = None,
 ) -> None:
-    """Deletes directory for treebuild related files (configuration, session store, etc.)"""
+    """Deletes directory for treebuild related files (configuration, tree store, etc.)"""
     try:
         loc_dir = loc or Path.cwd()
         delete_dir_impl(level, loc_dir)

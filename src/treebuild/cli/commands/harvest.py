@@ -4,9 +4,9 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from treebuild.cli.helpers import NO_SESSION_MSG, load_message
+from treebuild.cli.helpers import NO_TREE_MSG, load_message
 from treebuild.core.exceptions import (
-    EmptySessionError,
+    EmptyTreeError,
     NoRootSetError,
     RootDirNotFoundError,
 )
@@ -25,21 +25,21 @@ def render_txt_impl(
     Use tree to get output: Render tree to TXT
     """
 
-    # Check if file for session exists:
+    # Check if file for store exists:
     settings = get_settings()
-    session_file = settings.session_file
-    if not session_file.exists():
-        raise EmptySessionError(NO_SESSION_MSG)
+    tree_file = settings.tree_file
+    if not tree_file.exists():
+        raise EmptyTreeError(NO_TREE_MSG)
 
     # Retrieve current tree's nodes
-    session = TreeStore(session_file)
-    if not (session.has_paths() or session.has_root()):
+    store = TreeStore(tree_file)
+    if not (store.has_paths() or store.has_root()):
         msg = load_message("status_empty_tree.md")
-        raise EmptySessionError(msg)
+        raise EmptyTreeError(msg)
 
-    # read root from Session
+    # read root from tree store
     root_name = (
-        session.read_root()
+        store.read_root()
         if show_root
         else "Do not use the root in rendering, so do not care if it was set. "
     )
@@ -52,7 +52,7 @@ def render_txt_impl(
         )
 
     # Build the tree
-    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
+    builder = TreeBuilder(root_name=root_name, paths=store.read_paths())
     tree = builder.assemble_tree()
 
     # Render to text
@@ -70,22 +70,22 @@ def scaffold_impl(
     """
     Create the files and directories.
     """
-    # Check if file for session exists:
+    # Check if file for store exists:
     settings = get_settings()
-    session_file = settings.session_file
-    if not session_file.exists():
-        raise EmptySessionError(NO_SESSION_MSG)
+    tree_file = settings.tree_file
+    if not tree_file.exists():
+        raise EmptyTreeError(NO_TREE_MSG)
 
-    session = TreeStore(session_file)
+    store = TreeStore(tree_file)
 
     # check name of root directory is set:
-    root_name = session.read_root()
+    root_name = store.read_root()
     if not root_name:
         msg = load_message("harvest_scaffold_no_root_set.md")
         raise NoRootSetError(msg)
 
     # Build the tree
-    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
+    builder = TreeBuilder(root_name=root_name, paths=store.read_paths())
     tree = builder.assemble_tree()
 
     # materialize the tree
@@ -104,20 +104,20 @@ def teardown_impl(location: Optional[Path] = None, dry_run: bool = False) -> Non
     Remove the files and directories.
     (undoes `treebuild harvest scaffold`)
     """
-    # Check if file for session exists:
+    # Check if file for store exists:
     settings = get_settings()
-    session_file = settings.session_file
-    if not session_file.exists():
-        raise EmptySessionError(NO_SESSION_MSG)
-    session = TreeStore(session_file)
+    tree_file = settings.tree_file
+    if not tree_file.exists():
+        raise EmptyTreeError(NO_TREE_MSG)
+    store = TreeStore(tree_file)
 
     # Build the tree
-    root_name = session.read_root()
+    root_name = store.read_root()
     if not root_name:
         msg = load_message("harvest_teardown_no_root_set.md")
         raise NoRootSetError(msg)
 
-    builder = TreeBuilder(root_name=root_name, paths=session.read_paths())
+    builder = TreeBuilder(root_name=root_name, paths=store.read_paths())
     tree = builder.assemble_tree()
 
     # check if root directory exists

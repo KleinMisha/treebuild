@@ -8,7 +8,7 @@ from typer import Exit, Option, Typer, echo
 
 from treebuild.cli.commands.harvest import render_txt_impl, scaffold_impl, teardown_impl
 from treebuild.core.exceptions import (
-    EmptySessionError,
+    EmptyTreeError,
     NoRootSetError,
     RootDirNotFoundError,
 )
@@ -50,7 +50,7 @@ def text(
             to_file.write_text(rendering)
             echo(f"Written into file: {str(to_file)}")
         raise Exit(code=0)
-    except (EmptySessionError, NoRootSetError) as e:
+    except (EmptyTreeError, NoRootSetError) as e:
         logging.error(f"{type(e).__name__}:{str(e)}")
         raise Exit(code=1)
 
@@ -81,7 +81,7 @@ def scaffold(
     try:
         scaffold_impl(location, gitkeep, dry_run)
         raise Exit(code=0)
-    except (EmptySessionError, NoRootSetError) as e:
+    except (EmptyTreeError, NoRootSetError) as e:
         logging.error(f"{type(e).__name__}:{str(e)}")
         raise Exit(code=1)
 
@@ -106,6 +106,6 @@ def teardown(
     try:
         teardown_impl(location, dry_run)
         raise Exit(code=0)
-    except (EmptySessionError, NoRootSetError, RootDirNotFoundError) as e:
+    except (EmptyTreeError, NoRootSetError, RootDirNotFoundError) as e:
         logging.error(f"{type(e).__name__}:{str(e)}")
         raise Exit(code=1)

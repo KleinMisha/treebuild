@@ -9,7 +9,7 @@ from treebuild.cli.entrypoint import app
 from treebuild.storage.settings import (
     GLOBAL_SETTINGS_PATH,
     GLOBAL_TREEBUILD_DIR,
-    SESSION_FILE_NAME,
+    TREE_FILE_NAME,
     TreeBuildSettings,
     load_settings,
     write_settings,
@@ -233,7 +233,7 @@ def test_create_local(with_local_dir: tuple[Path, Path]) -> None:
     assert local_file.exists()
 
     local_settings = load_settings(local_file)
-    assert local_settings["session_file"] == str(local_file.parent / SESSION_FILE_NAME)
+    assert local_settings["tree_file"] == str(local_file.parent / TREE_FILE_NAME)
 
 
 def test_create_local_incl_new_dir(tmp_path: Path) -> None:
@@ -370,7 +370,7 @@ def test_delete_raises_if_no_dir_exists(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "key, value",
     [
-        ("session_file", "path/to/a/tree.txt"),
+        ("tree_file", "path/to/a/tree.txt"),
         ("renderer", "plain"),
     ],
 )
@@ -390,7 +390,7 @@ def test_set_global_setting(
 @pytest.mark.parametrize(
     "key, value",
     [
-        ("session_file", "path/to/a/tree.txt"),
+        ("tree_file", "path/to/a/tree.txt"),
         ("renderer", "plain"),
     ],
 )
@@ -414,7 +414,7 @@ def test_set_local_setting(
 @pytest.mark.parametrize(
     "key, first_value, second_value",
     [
-        ("session_file", "path/to/first/tree.txt", "path/to/second/tree.txt"),
+        ("tree_file", "path/to/first/tree.txt", "path/to/second/tree.txt"),
         (
             "renderer",
             "plain",
@@ -447,7 +447,7 @@ def test_set_raises_if_no_global_settings_file(
     """Attempt to set a value before having created a file."""
     runner = CliRunner()
     result = runner.invoke(
-        app, ["config", "set", "session_file", "will/fail.txt", "--level", "global"]
+        app, ["config", "set", "tree_file", "will/fail.txt", "--level", "global"]
     )
     assert result.exit_code == 1
     assert result.stdout != ""
@@ -463,7 +463,7 @@ def test_set_raises_if_no_local_settings_file(
         [
             "config",
             "set",
-            "session_file",
+            "tree_file",
             "will/fail.txt",
             "--level",
             "local",
@@ -497,7 +497,7 @@ def test_raises_if_invalid_key(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "key, value",
     [
-        ("session_file", "path/to/a/tree.txt"),
+        ("tree_file", "path/to/a/tree.txt"),
         ("renderer", "plain"),
     ],
 )
@@ -520,7 +520,7 @@ def test_unset_global_setting(
 @pytest.mark.parametrize(
     "key, value",
     [
-        ("session_file", "path/to/a/tree.txt"),
+        ("tree_file", "path/to/a/tree.txt"),
         ("renderer", "plain"),
     ],
 )
@@ -552,7 +552,7 @@ def test_unset_keeps_other_values_intact(
     """Set two values, only unset one."""
     runner = CliRunner()
     runner.invoke(
-        app, ["config", "set", "session_file", "path/to/tree.txt", "--level", "global"]
+        app, ["config", "set", "tree_file", "path/to/tree.txt", "--level", "global"]
     )
     runner.invoke(app, ["config", "set", "renderer", "plain", "--level", "global"])
     result = runner.invoke(app, ["config", "unset", "renderer", "--level", "global"])
@@ -560,8 +560,8 @@ def test_unset_keeps_other_values_intact(
     assert result.stdout != ""
     settings = load_settings(GLOBAL_SETTINGS_PATH)
     assert "renderer" not in settings
-    assert "session_file" in settings
-    assert settings["session_file"] == "path/to/tree.txt"
+    assert "tree_file" in settings
+    assert settings["tree_file"] == "path/to/tree.txt"
 
 
 def test_unset_raises_if_no_global_settings_file(
@@ -602,7 +602,7 @@ def test_unset_raises_if_no_local_settings_file(
 @pytest.mark.parametrize(
     "key",
     [
-        ("session_file"),
+        ("tree_file"),
         ("renderer"),
     ],
 )
@@ -624,7 +624,7 @@ def test_unset_raises_if_no_value_set_previously(
 @pytest.mark.parametrize(
     "key, value",
     [
-        ("session_file", "new/path.txt"),
+        ("tree_file", "new/path.txt"),
         ("renderer", "different_renderer"),
     ],
 )
@@ -644,7 +644,7 @@ def test_restore_all_global_settings(
 @pytest.mark.parametrize(
     "key, value",
     [
-        ("session_file", "new/path.txt"),
+        ("tree_file", "new/path.txt"),
         ("renderer", "different_renderer"),
     ],
 )
@@ -670,8 +670,8 @@ def test_restore_all_local_settings(
 @pytest.mark.parametrize(
     "key, value, other_key, other_value",
     [
-        ("session_file", "new/path.txt", "renderer", "different_renderer"),
-        ("renderer", "different_renderer", "session_file", "new/path.txt"),
+        ("tree_file", "new/path.txt", "renderer", "different_renderer"),
+        ("renderer", "different_renderer", "tree_file", "new/path.txt"),
     ],
 )
 def test_restore_specific_global_setting(
@@ -699,8 +699,8 @@ def test_restore_specific_global_setting(
 @pytest.mark.parametrize(
     "key, value, other_key, other_value",
     [
-        ("session_file", "new/path.txt", "renderer", "different_renderer"),
-        ("renderer", "different_renderer", "session_file", "new/path.txt"),
+        ("tree_file", "new/path.txt", "renderer", "different_renderer"),
+        ("renderer", "different_renderer", "tree_file", "new/path.txt"),
     ],
 )
 def test_restore_specific_local_setting(
@@ -777,7 +777,7 @@ def test_restore_raises_if_global_file_does_not_exist(
 ) -> None:
     runner = CliRunner()
     result = runner.invoke(
-        app, ["config", "restore", "--key", "session_file", "--level", "global"]
+        app, ["config", "restore", "--key", "tree_file", "--level", "global"]
     )
     assert result.exit_code == 1
     assert result.stdout != ""
