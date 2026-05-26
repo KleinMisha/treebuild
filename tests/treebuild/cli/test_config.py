@@ -493,6 +493,31 @@ def test_raises_if_invalid_key(tmp_path: Path) -> None:
     assert result.stdout != ""
 
 
+@pytest.mark.parametrize(
+    "key, value, other_key, other_value",
+    [
+        ("tree_file", "new/path.txt", "renderer", "different_renderer"),
+        ("renderer", "different_renderer", "tree_file", "new/path.txt"),
+    ],
+)
+def test_set_multiple(
+    with_global_settings: Generator[None, None, None],
+    key: str,
+    value: str,
+    other_key: str,
+    other_value: str,
+) -> None:
+    """setting a second configuration should keep the other settings in tact."""
+    runner = CliRunner()
+    runner.invoke(app, ["config", "set", other_key, other_value, "--level", "global"])
+    result = runner.invoke(app, ["config", "set", key, value, "--level", "global"])
+    assert result.exit_code == 0
+    assert key in result.stdout
+    settings = load_settings(GLOBAL_SETTINGS_PATH)
+    assert settings[key] == value
+    assert settings[other_key] == other_value
+
+
 # # ==== treebuild config unset <KEY> ====
 @pytest.mark.parametrize(
     "key, value",
