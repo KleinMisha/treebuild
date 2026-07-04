@@ -9,7 +9,7 @@ from treebuild.cli.entrypoint import app
 from treebuild.core.settings import (
     GLOBAL_SETTINGS_PATH,
     GLOBAL_TREEBUILD_DIR,
-    SESSION_FILE_NAME,
+    STORE_FILE_NAME,
     TreeBuildSettings,
     load_settings,
     write_settings,
@@ -233,7 +233,7 @@ def test_create_local(with_local_dir: tuple[Path, Path]) -> None:
     assert local_file.exists()
 
     local_settings = load_settings(local_file)
-    assert local_settings["session_file"] == str(local_file.parent / SESSION_FILE_NAME)
+    assert local_settings["session_file"] == str(local_file.parent / STORE_FILE_NAME)
 
 
 def test_create_local_incl_new_dir(tmp_path: Path) -> None:
