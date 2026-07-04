@@ -112,7 +112,7 @@ def interactive_demo() -> None:
     )
     _ask_for_command(
         correct_command=_ADD_FILE_CMD,
-        on_success=partial(grow_impl, paths=["main.py"]),
+        on_success=partial(grow_impl, paths_as_args=["main.py"]),
     )
 
     # 6. Try adding the same file, but include root-dir as prefix --> Duplicates are skipped automatically
@@ -122,7 +122,7 @@ def interactive_demo() -> None:
     )
     _ask_for_command(
         correct_command=_ADD_SAME_FILE_CMD,
-        on_success=partial(grow_impl, paths=["demo-project/main.py"]),
+        on_success=partial(grow_impl, paths_as_args=["demo-project/main.py"]),
     )
     pause(
         "Would you look at that! Treebuild understands you've already added this file and will simply skip it, so you don't need to worry about accidentally adding the same file twice."
@@ -135,7 +135,7 @@ def interactive_demo() -> None:
     )
     _ask_for_command(
         correct_command=_ADD_EMPTY_DIR_CMD,
-        on_success=partial(grow_impl, paths=["empty-dummy-dir/"]),
+        on_success=partial(grow_impl, paths_as_args=["empty-dummy-dir/"]),
     )
 
     # 8. Check your progress
@@ -150,7 +150,7 @@ def interactive_demo() -> None:
     echo(f"Call `{_GROW_MULTIPLE_CMD}`")
     _ask_for_command(
         correct_command=_GROW_MULTIPLE_CMD,
-        on_success=partial(grow_impl, paths=_DEMO_PATHS),
+        on_success=partial(grow_impl, paths_as_args=_DEMO_PATHS),
     )
     pause(
         "All paths are interpreted as being relative to the root's directory."
