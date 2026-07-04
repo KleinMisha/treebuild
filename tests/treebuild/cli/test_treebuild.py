@@ -470,7 +470,7 @@ def test_plant_fails_if_nodes_already_added(
 def test_grow_single_path(
     active_session: tuple[Path, dict[str, str]], path_name: str
 ) -> None:
-    """Writing a single bath (leaf or branch) to your current session."""
+    """Writing a single path (leaf or branch) to your current session."""
     file, environment = active_session
     runner = CliRunner(env=environment)
     result = runner.invoke(app, ["grow", path_name])
@@ -558,6 +558,96 @@ def test_grow_siblings_unaffected(active_session: tuple[Path, dict[str, str]]) -
     assert set(session.read_paths()) == set(
         [normalize(p) for p in ["parent/child/file.txt", "parent/sibling/"]]
     )
+
+
+def test_grow_from_file(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """Load paths in bulk from file"""
+
+    # prepare file
+    paths_to_add = ["some.file", "some_directory/", "a_file/within_a.dir"]
+    tmp_file = tmp_path / "mock_paths.txt"
+    tmp_file.touch()
+    with tmp_file.open("w") as f:
+        f.writelines("\n".join(paths_to_add))
+
+    # invoke CLI and assert
+    file, environment = active_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["grow", "-f", str(tmp_file)])
+    assert result.exit_code == 0
+    assert result.stdout != ""
+
+    session = TreeStore(file)
+    assert set(session.read_paths()) == set([normalize(p) for p in paths_to_add])
+
+
+def test_grow_combine_args_and_file(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """If using both positional arguments and a file path, should add both sets of paths to tree."""
+    paths_as_args = ["some.file", "some_directory/", "a_file/within_a.dir"]
+    paths_from_file = [
+        "another.file",
+        "another_directory/",
+        "a_dir/has_a_file/within_a.dir",
+    ]
+    paths_to_add = paths_as_args + paths_from_file
+    # prepare file
+    tmp_file = tmp_path / "mock_paths.txt"
+    with tmp_file.open("w") as f:
+        f.writelines("\n".join(paths_from_file))
+
+    # invoke CLI and assert
+    file, environment = active_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(
+        app, ["grow"] + paths_as_args + ["--from-file", str(tmp_file)]
+    )
+    assert result.exit_code == 0
+    assert result.stdout != ""
+
+    session = TreeStore(file)
+    assert set(session.read_paths()) == set([normalize(p) for p in paths_to_add])
+
+
+def test_grow_needs_paths_or_file_flag(
+    active_session: tuple[Path, dict[str, str]],
+) -> None:
+    """Cannot grow without specifying a path or providing a file (using the --from-file / -f flag)"""
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["grow"])
+    assert result.exit_code == 1
+    assert result.stdout != ""
+
+
+def test_grow_needs_existing_file(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """Cannot grow if the file with the paths does not exist."""
+    non_existing_file = tmp_path / "not_created.txt"
+    _, environment = active_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["grow", "-f", str(non_existing_file)])
+    assert result.exit_code == 1
+    assert result.stdout != ""
+
+
+def test_grow_handles_empty_file(
+    active_session: tuple[Path, dict[str, str]], tmp_path: Path
+) -> None:
+    """An empty file (or if it only contains comments) will pass, but user will be shown a warning."""
+    empty_file = tmp_path / "no_paths.txt"
+    empty_file.touch()
+    file, environment = active_session
+    runner = CliRunner(env=environment)
+    result = runner.invoke(app, ["grow", "-f", str(empty_file)])
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    session = TreeStore(file)
+    assert session.read_paths() == []
 
 
 # --- treebuild prune ---

@@ -1,6 +1,7 @@
 """Implementation of primary commands, which will be called as 'treebuild <COMMAND> <ARGS> <OPTIONS>'"""
 
 import logging
+from pathlib import Path
 from typing import Optional
 
 from treebuild.cli.helpers import NO_SESSION_MSG, load_message
@@ -11,6 +12,7 @@ from treebuild.core.exceptions import (
     RootAlreadySetError,
     SessionAlreadyExistsError,
 )
+from treebuild.core.helpers import read_paths_from_file
 from treebuild.core.settings import get_settings
 from treebuild.storage.tree_store import TreeStore, normalize
 
@@ -77,7 +79,9 @@ def status_impl() -> None:
     logging.info(message_2.format(paths="\n".join(session.read_paths())))
 
 
-def grow_impl(paths: list[str]) -> None:
+def grow_impl(
+    paths_as_args: Optional[list[str]] = None, file: Optional[Path] = None
+) -> None:
     """Add (a) path(s) to the current session's tree."""
 
     settings = get_settings()
@@ -87,6 +91,16 @@ def grow_impl(paths: list[str]) -> None:
 
     # Happy path: write into file
     session = TreeStore(file_path=session_file)
+
+    # combine paths from arguments and file
+    # NOTE: validation that at least one of these two is not empty already happens in routing layer.
+    paths = paths_as_args or []
+    if file:
+        paths_from_file = read_paths_from_file(file)
+        if len(paths_from_file) == 0:
+            logging.warning(f"No paths detected in: {file}")
+        paths.extend(paths_from_file)
+
     for p in paths:
         try:
             session.write_path(p)
