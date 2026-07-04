@@ -1,6 +1,7 @@
 """Primary commands, which will be called as 'treebuild <COMMAND> <ARGS> <OPTIONS>'"""
 
 import logging
+from pathlib import Path
 from typing import Annotated, Optional
 
 from typer import Abort, Argument, Exit, Option, Typer, echo
@@ -79,11 +80,32 @@ def plant(
 
 @app.command()
 def grow(
-    paths: list[str] = Argument(help="Paths to be added as nodes to the tree."),
+    paths: Annotated[
+        Optional[list[str]],
+        Argument(help="Path(s) to be added as nodes to the tree."),
+    ] = None,
+    file: Annotated[
+        Optional[Path],
+        Option(
+            "--from-file", "-f", help="Bulk add paths from a file. One path per line."
+        ),
+    ] = None,
 ) -> None:
     """Add (a) path(s) to the current session's tree."""
+    # Improper call to the command.
+    if not (paths or file):
+        logging.error(
+            "Please enter paths to remove or use the `--from-file` flag to load the files from a file."
+        )
+        raise Exit(code=1)
+
+    # Make sure file exists
+    if file and not file.exists():
+        logging.error(f"File not found: {file}")
+        raise Exit(code=1)
+
     try:
-        grow_impl(paths)
+        grow_impl(paths_as_args=paths, file=file)
         raise Exit(code=0)
     except EmptySessionError as e:
         logging.error(f"{type(e).__name__}:{str(e)}")

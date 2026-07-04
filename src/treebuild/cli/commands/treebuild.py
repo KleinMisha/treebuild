@@ -97,6 +97,8 @@ def grow_impl(
     paths = paths_as_args or []
     if file:
         paths_from_file = read_paths_from_file(file)
+        if len(paths_from_file) == 0:
+            logging.warning(f"No paths detected in: {file}")
         paths.extend(paths_from_file)
 
     for p in paths:
