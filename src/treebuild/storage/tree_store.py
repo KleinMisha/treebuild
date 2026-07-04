@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 from treebuild.core.exceptions import DuplicatePathError
+from treebuild.core.helpers import read_paths_from_file
 
 ROOT_NAME_PREFIX = "# ROOT:"
 
@@ -35,13 +36,7 @@ class TreeStore:
 
     def read_paths(self) -> list[str]:
         """Load the list of paths already entered previously"""
-        with self.file.open(mode="r") as f:
-            lines = f.readlines()
-        return [
-            line.strip()
-            for line in lines
-            if line.strip() and not line.strip().startswith(ROOT_NAME_PREFIX)
-        ]
+        return read_paths_from_file(self.file)
 
     def write_path(self, entry: str) -> None:
         """
