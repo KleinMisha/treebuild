@@ -3,12 +3,12 @@
 from pathlib import Path
 
 from treebuild.core.settings import (
-    GLOBAL_SESSION_PATH,
     GLOBAL_SETTINGS_PATH,
+    GLOBAL_STORE_PATH,
     GLOBAL_TREEBUILD_DIR,
     LOCAL_TREEBUILD_DIR,
-    SESSION_FILE_NAME,
     SETTINGS_FILE_NAME,
+    STORE_FILE_NAME,
     SettingsLevel,
     load_settings,
     resolve_session_file,
@@ -107,20 +107,20 @@ def test_resolve_default_local_settings_file(tmp_path: Path) -> None:
 def test_resolve_global_session_file() -> None:
     assert (
         resolve_session_file(SettingsLevel.GLOBAL, Path("does/not/matter"))
-        == GLOBAL_SESSION_PATH
+        == GLOBAL_STORE_PATH
     )
 
 
 def test_resolve_local_existing_session_file(tmp_path: Path) -> None:
     local_dir = tmp_path / ".treebuild/"
-    local_file = local_dir / SESSION_FILE_NAME
+    local_file = local_dir / STORE_FILE_NAME
     local_dir.mkdir(exist_ok=True)
     local_file.touch()
     assert resolve_session_file(SettingsLevel.LOCAL, tmp_path) == local_file
 
 
 def test_resolve_default_local_session_file(tmp_path: Path) -> None:
-    local_file = tmp_path / LOCAL_TREEBUILD_DIR / SESSION_FILE_NAME
+    local_file = tmp_path / LOCAL_TREEBUILD_DIR / STORE_FILE_NAME
     assert resolve_session_file(SettingsLevel.LOCAL, tmp_path) == local_file
 
 

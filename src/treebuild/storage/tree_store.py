@@ -17,7 +17,7 @@ def normalize(entry: str) -> str:
     return normalized + "/" if is_dir else normalized
 
 
-class SessionStore:
+class TreeStore:
     """
     To save the paths in between CLI calls, so one does not need to write all paths in one go.
     -----

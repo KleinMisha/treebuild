@@ -3,7 +3,7 @@
 treebuild is a CLI tool for **sketching repository structures** before you build them.
 Design your tree, then copy-paste it into a README, a prompt, or your notes.
 
----****
+---
 
 ## Quick demo
 
