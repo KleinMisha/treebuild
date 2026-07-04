@@ -13,7 +13,7 @@ from treebuild.core.exceptions import (
 from treebuild.core.settings import get_settings
 from treebuild.harvest.materializer import Materializer
 from treebuild.harvest.render_factory import RenderMethod, get_renderer
-from treebuild.storage.session import SessionStore
+from treebuild.storage.tree_store import TreeStore
 from treebuild.tree.builder import TreeBuilder
 
 
@@ -32,7 +32,7 @@ def render_txt_impl(
         raise EmptySessionError(NO_SESSION_MSG)
 
     # Retrieve current tree's nodes
-    session = SessionStore(session_file)
+    session = TreeStore(session_file)
     if not (session.has_paths() or session.has_root()):
         msg = load_message("status_empty_tree.md")
         raise EmptySessionError(msg)
@@ -76,7 +76,7 @@ def scaffold_impl(
     if not session_file.exists():
         raise EmptySessionError(NO_SESSION_MSG)
 
-    session = SessionStore(session_file)
+    session = TreeStore(session_file)
 
     # check name of root directory is set:
     root_name = session.read_root()
@@ -109,7 +109,7 @@ def teardown_impl(location: Optional[Path] = None, dry_run: bool = False) -> Non
     session_file = settings.session_file
     if not session_file.exists():
         raise EmptySessionError(NO_SESSION_MSG)
-    session = SessionStore(session_file)
+    session = TreeStore(session_file)
 
     # Build the tree
     root_name = session.read_root()
